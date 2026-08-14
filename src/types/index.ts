@@ -122,3 +122,86 @@ export const ROLE_BADGE_CLASSES: Record<UserRole, string> = {
   supervisor: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-300',
   gestor: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300',
 }
+
+// ---- BOOKS ----
+export type BookStatus = 'processing' | 'pending_review' | 'reviewed' | 'completed'
+export type PhotoReviewStatus = 'pending' | 'approved' | 'corrected'
+export type StoredFrequency = 'daily' | 'seg_qua_sex' | 'ter_qui_sab' | 'seg_qua_sex_sab'
+
+export const FREQUENCY_TO_STORED: Record<AuditFrequency, StoredFrequency> = {
+  diaria: 'daily',
+  seg_qua_sex: 'seg_qua_sex',
+  ter_qui_sab: 'ter_qui_sab',
+  seg_qua_sex_sab: 'seg_qua_sex_sab',
+}
+
+export const BOOK_STATUS_LABELS: Record<BookStatus, string> = {
+  processing: 'Processando',
+  pending_review: 'Revisão Pendente',
+  reviewed: 'Revisado',
+  completed: 'Concluído',
+}
+
+export const BOOK_STATUS_BADGE: Record<BookStatus, string> = {
+  processing: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-300',
+  pending_review:
+    'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-300',
+  reviewed:
+    'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300',
+  completed:
+    'bg-slate-200 text-emerald-900 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-200',
+}
+
+export const REVIEW_STATUS_LABELS: Record<PhotoReviewStatus, string> = {
+  pending: 'Pendente',
+  approved: 'Aprovado',
+  corrected: 'Corrigido',
+}
+
+export interface Book {
+  id: string
+  title: string
+  brand: string
+  analyst: string
+  file_name: string
+  file_size?: number
+  audit_date: string
+  audit_frequency?: StoredFrequency
+  total_slides?: number
+  total_photos?: number
+  identified_stores?: number
+  pending_review?: number
+  missing_stores?: number
+  status: BookStatus
+  missing_store_ids?: string
+  expand?: {
+    brand?: Brand
+    analyst?: User
+  }
+  created: string
+  updated: string
+}
+
+export interface BookPhoto {
+  id: string
+  book: string
+  slide_number?: number
+  photo_index?: number
+  image_data?: string
+  extracted_text?: string
+  identified_store?: string
+  identified_store_name?: string
+  confidence?: number
+  needs_review?: boolean
+  review_status?: PhotoReviewStatus
+  reviewed_by?: string
+  review_notes?: string
+  corrected_store?: string
+  expand?: {
+    identified_store?: Store
+    corrected_store?: Store
+    reviewed_by?: User
+  }
+  created: string
+  updated: string
+}

@@ -11,6 +11,7 @@ import {
   ClipboardList,
   UserCog,
   LogOut,
+  FileSpreadsheet,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Logo } from '@/components/Logo'
@@ -67,6 +68,12 @@ export const MobileHeader: React.FC = () => {
       path: '/regras',
       icon: ClipboardList,
       roles: ['administrator', 'analista_books', 'supervisor', 'gestor'],
+    },
+    {
+      label: 'Books',
+      path: '/books',
+      icon: FileSpreadsheet,
+      roles: ['administrator', 'analista_books'],
     },
     { label: 'Usuários', path: '/usuarios', icon: UserCog, roles: ['administrator'] },
   ]

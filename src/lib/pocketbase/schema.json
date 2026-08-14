@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T19:37:26.244Z",
+  "generatedAt": "2026-08-14T19:55:17.623Z",
   "collections": [
     {
       "name": "users",
@@ -397,6 +397,242 @@
         }
       ],
       "indexes": ["CREATE INDEX idx_audit_rules_brand ON audit_rules (brand)"]
+    },
+    {
+      "name": "books",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books'",
+        "update": "@request.auth.role = 'administrator' || (@request.auth.role = 'analista_books' && analyst = @request.auth.id)",
+        "delete": "@request.auth.role = 'administrator' || (@request.auth.role = 'analista_books' && analyst = @request.auth.id)"
+      },
+      "fields": [
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "brand",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "brands"
+        },
+        {
+          "name": "analyst",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "file_name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "file_size",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "audit_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "audit_frequency",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["daily", "seg_qua_sex", "ter_qui_sab", "seg_qua_sex_sab"]
+        },
+        {
+          "name": "total_slides",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "total_photos",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "identified_stores",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pending_review",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "missing_stores",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["processing", "pending_review", "reviewed", "completed"]
+        },
+        {
+          "name": "missing_store_ids",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_books_brand ON books (brand)",
+        "CREATE INDEX idx_books_analyst ON books (analyst)",
+        "CREATE INDEX idx_books_status ON books (status)",
+        "CREATE INDEX idx_books_created ON books (created DESC)"
+      ]
+    },
+    {
+      "name": "book_photos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books'",
+        "update": "@request.auth.role = 'administrator' || (@request.auth.role = 'analista_books' && book.analyst = @request.auth.id)",
+        "delete": "@request.auth.role = 'administrator' || (@request.auth.role = 'analista_books' && book.analyst = @request.auth.id)"
+      },
+      "fields": [
+        {
+          "name": "book",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "books"
+        },
+        {
+          "name": "slide_number",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "photo_index",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "image_data",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "extracted_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "identified_store",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "stores"
+        },
+        {
+          "name": "identified_store_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "confidence",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "needs_review",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "review_status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pending", "approved", "corrected"]
+        },
+        {
+          "name": "reviewed_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "review_notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "corrected_store",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "stores"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_book_photos_book ON book_photos (book)",
+        "CREATE INDEX idx_book_photos_store ON book_photos (identified_store)",
+        "CREATE INDEX idx_book_photos_review ON book_photos (needs_review)"
+      ]
     }
   ]
 }

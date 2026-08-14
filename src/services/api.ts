@@ -1,5 +1,5 @@
 import pb from '@/lib/pocketbase/client'
-import { Brand, Store, SKU, Promoter, AuditRule, User } from '@/types'
+import { Brand, Store, SKU, Promoter, AuditRule, User, Book, BookPhoto } from '@/types'
 
 // Helper for file URLs
 export function getFileUrl(
@@ -165,4 +165,55 @@ export async function updateUser(id: string, data: Record<string, any>): Promise
 
 export async function deleteUser(id: string): Promise<boolean> {
   return await pb.collection('users').delete(id)
+}
+
+// BOOKS
+export async function getBooks(filter?: string): Promise<Book[]> {
+  return await pb.collection('books').getFullList<Book>({
+    filter,
+    sort: '-created',
+    expand: 'brand,analyst',
+  })
+}
+
+export async function getBookById(id: string): Promise<Book> {
+  return await pb.collection('books').getOne<Book>(id, {
+    expand: 'brand,analyst',
+  })
+}
+
+export async function createBook(data: FormData | Partial<Book>): Promise<Book> {
+  return await pb.collection('books').create<Book>(data)
+}
+
+export async function updateBook(id: string, data: FormData | Partial<Book>): Promise<Book> {
+  return await pb.collection('books').update<Book>(id, data)
+}
+
+export async function deleteBook(id: string): Promise<boolean> {
+  return await pb.collection('books').delete(id)
+}
+
+// BOOK PHOTOS
+export async function getBookPhotos(bookId: string): Promise<BookPhoto[]> {
+  return await pb.collection('book_photos').getFullList<BookPhoto>({
+    filter: `book = "${bookId}"`,
+    sort: 'slide_number,photo_index',
+    expand: 'identified_store,corrected_store,reviewed_by',
+  })
+}
+
+export async function createBookPhoto(data: FormData | Partial<BookPhoto>): Promise<BookPhoto> {
+  return await pb.collection('book_photos').create<BookPhoto>(data)
+}
+
+export async function updateBookPhoto(
+  id: string,
+  data: FormData | Partial<BookPhoto>,
+): Promise<BookPhoto> {
+  return await pb.collection('book_photos').update<BookPhoto>(id, data)
+}
+
+export async function deleteBookPhoto(id: string): Promise<boolean> {
+  return await pb.collection('book_photos').delete(id)
 }

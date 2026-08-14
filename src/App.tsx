@@ -16,6 +16,9 @@ import { SKUs } from './pages/SKUs'
 import { Promotores } from './pages/Promotores'
 import { Regras } from './pages/Regras'
 import { Usuarios } from './pages/Usuarios'
+import { Books } from './pages/Books'
+import { ImportBook } from './pages/ImportBook'
+import { DetalheBook } from './pages/DetalheBook'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -36,6 +39,12 @@ const App = () => (
               <Route path="/skus" element={<SKUs />} />
               <Route path="/promotores" element={<Promotores />} />
               <Route path="/regras" element={<Regras />} />
+
+              <Route element={<RequireRole allowedRoles={['administrator', 'analista_books']} />}>
+                <Route path="/books" element={<Books />} />
+                <Route path="/books/import" element={<ImportBook />} />
+                <Route path="/books/:id" element={<DetalheBook />} />
+              </Route>
 
               <Route element={<RequireRole allowedRoles={['administrator']} />}>
                 <Route path="/usuarios" element={<Usuarios />} />
