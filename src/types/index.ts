@@ -173,6 +173,9 @@ export interface Book {
   pending_review?: number
   missing_stores?: number
   status: BookStatus
+  analysis_status?: AnalysisStatus
+  analysis_summary?: string
+  analyzed_at?: string
   missing_store_ids?: string
   expand?: {
     brand?: Brand
@@ -201,6 +204,123 @@ export interface BookPhoto {
     identified_store?: Store
     corrected_store?: Store
     reviewed_by?: User
+  }
+  created: string
+  updated: string
+}
+
+// ---- SKU ANALYSIS ----
+export type AnalysisStatus = 'pending' | 'processing' | 'completed'
+
+export type SkuCategory =
+  | 'presente_pdv'
+  | 'ruptura_justificada'
+  | 'ausente_cobrar'
+  | 'validar_ruptura_antiga'
+  | 'sem_foto_secao'
+  | 'sem_foto_loja'
+
+export type ConfidenceLevel = 'alta' | 'media' | 'baixa'
+
+export type RuptureType = 'total' | 'parcial' | 'zerado'
+
+export const ANALYSIS_STATUS_LABELS: Record<AnalysisStatus, string> = {
+  pending: 'Pendente',
+  processing: 'Em Processamento',
+  completed: 'Concluída',
+}
+
+export const ANALYSIS_STATUS_BADGE: Record<AnalysisStatus, string> = {
+  pending: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300',
+  processing: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-300',
+  completed:
+    'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300',
+}
+
+export const SKU_CATEGORY_LABELS: Record<SkuCategory, string> = {
+  presente_pdv: 'Presente no PDV',
+  ruptura_justificada: 'Ruptura Justificada',
+  ausente_cobrar: 'Ausente — Cobrar',
+  validar_ruptura_antiga: 'Validar Ruptura Antiga',
+  sem_foto_secao: 'Sem Foto — Seção não Capturada',
+  sem_foto_loja: 'Sem Foto — Loja não Auditada',
+}
+
+export const SKU_CATEGORY_SHORT: Record<SkuCategory, string> = {
+  presente_pdv: 'Presente',
+  ruptura_justificada: 'Ruptura Justif.',
+  ausente_cobrar: 'Ausente — Cobrar',
+  validar_ruptura_antiga: 'Validar Antiga',
+  sem_foto_secao: 'Sem Foto — Seção',
+  sem_foto_loja: 'Sem Foto — Loja',
+}
+
+export const SKU_CATEGORY_BADGE: Record<SkuCategory, string> = {
+  presente_pdv:
+    'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300',
+  ruptura_justificada:
+    'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-300',
+  ausente_cobrar: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-300',
+  validar_ruptura_antiga:
+    'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950 dark:text-orange-300',
+  sem_foto_secao:
+    'bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300',
+  sem_foto_loja: 'bg-zinc-200 text-zinc-700 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300',
+}
+
+export const CONFIDENCE_LABELS: Record<ConfidenceLevel, string> = {
+  alta: 'Alta',
+  media: 'Média',
+  baixa: 'Baixa / Revisar',
+}
+
+export const CONFIDENCE_BADGE: Record<ConfidenceLevel, string> = {
+  alta: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300',
+  media: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-300',
+  baixa: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-300',
+}
+
+export const RUPTURE_TYPE_LABELS: Record<RuptureType, string> = {
+  total: 'Ruptura Total',
+  parcial: 'Ruptura Parcial',
+  zerado: 'Estoque Zerado',
+}
+
+export interface RuptureReport {
+  id: string
+  brand: string
+  store: string
+  sku: string
+  report_date: string
+  rupture_type: RuptureType
+  days_in_rupture?: number
+  expand?: {
+    brand?: Brand
+    store?: Store
+    sku?: SKU
+  }
+  created: string
+  updated: string
+}
+
+export interface SkuClassification {
+  id: string
+  book: string
+  store: string
+  sku: string
+  category: SkuCategory
+  confidence?: ConfidenceLevel
+  similarity?: number
+  matched_photo?: string
+  reviewer?: string
+  reviewed_at?: string
+  notes?: string
+  expand?: {
+    book?: Book
+    store?: Store
+    sku?: SKU
+    matched_photo?: BookPhoto
+    reviewer?: User
   }
   created: string
   updated: string

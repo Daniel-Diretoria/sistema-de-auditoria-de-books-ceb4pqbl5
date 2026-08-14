@@ -32,7 +32,22 @@ import {
   Trash2,
   ClipboardCheck,
   Inbox,
+  ScanSearch,
 } from 'lucide-react'
+import { ANALYSIS_STATUS_LABELS, ANALYSIS_STATUS_BADGE, AnalysisStatus } from '@/types'
+
+function summaryText(raw?: string): string {
+  if (!raw) return ''
+  try {
+    const s = JSON.parse(raw) as Record<string, number>
+    const presentes = s.presente_pdv || 0
+    const ausentes = s.ausente_cobrar || 0
+    if (presentes === 0 && ausentes === 0) return ''
+    return `${presentes} presentes, ${ausentes} ausentes`
+  } catch {
+    return ''
+  }
+}
 
 export const Books: React.FC = () => {
   const { user } = useAuth()
@@ -232,6 +247,7 @@ export const Books: React.FC = () => {
                   <th className="text-center font-semibold px-4 py-3 text-amber-700">Pend.</th>
                   <th className="text-center font-semibold px-4 py-3 text-red-700">Ausentes</th>
                   <th className="text-left font-semibold px-4 py-3">Status</th>
+                  <th className="text-left font-semibold px-4 py-3">Análise</th>
                   <th className="text-left font-semibold px-4 py-3">Upload</th>
                   <th className="text-right font-semibold px-4 py-3">Ações</th>
                 </tr>
@@ -294,6 +310,34 @@ export const Books: React.FC = () => {
                           {BOOK_STATUS_LABELS[b.status]}
                         </Badge>
                       </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/books/${b.id}/analysis`)}
+                          className="flex flex-col items-start gap-1 text-left hover:opacity-80"
+                          title="Abrir análise de SKUs"
+                        >
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] ${
+                              ANALYSIS_STATUS_BADGE[
+                                (b.analysis_status as AnalysisStatus) || 'pending'
+                              ]
+                            }`}
+                          >
+                            {
+                              ANALYSIS_STATUS_LABELS[
+                                (b.analysis_status as AnalysisStatus) || 'pending'
+                              ]
+                            }
+                          </Badge>
+                          {b.analysis_summary && (
+                            <span className="text-[10px] text-slate-500">
+                              {summaryText(b.analysis_summary)}
+                            </span>
+                          )}
+                        </button>
+                      </td>
                       <td className="px-4 py-3 text-xs text-slate-500">{formatDate(b.created)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
@@ -305,6 +349,15 @@ export const Books: React.FC = () => {
                             title="Ver detalhes"
                           >
                             <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-400 hover:text-indigo-600"
+                            onClick={() => navigate(`/books/${b.id}/analysis`)}
+                            title="Análise de SKUs"
+                          >
+                            <ScanSearch className="h-4 w-4" />
                           </Button>
                           {b.status === 'pending_review' && (
                             <Button

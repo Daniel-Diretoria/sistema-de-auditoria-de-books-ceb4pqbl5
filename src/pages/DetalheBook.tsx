@@ -53,8 +53,10 @@ import {
   Search,
   Trash2,
   FileSpreadsheet,
+  ScanSearch,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
+import { ANALYSIS_STATUS_LABELS, ANALYSIS_STATUS_BADGE, AnalysisStatus } from '@/types'
 
 export const DetalheBook: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -261,6 +263,14 @@ export const DetalheBook: React.FC = () => {
                 >
                   {BOOK_STATUS_LABELS[book.status]}
                 </Badge>
+                {book.analysis_status && (
+                  <Badge
+                    variant="outline"
+                    className={`text-[11px] ${ANALYSIS_STATUS_BADGE[book.analysis_status as AnalysisStatus]}`}
+                  >
+                    Análise: {ANALYSIS_STATUS_LABELS[book.analysis_status as AnalysisStatus]}
+                  </Badge>
+                )}
                 <span className="text-xs text-slate-500">{brand?.name}</span>
                 <span className="text-xs text-slate-400">·</span>
                 <span className="text-xs text-slate-500">
@@ -272,15 +282,24 @@ export const DetalheBook: React.FC = () => {
             </div>
           </div>
         </div>
-        {canDelete && (
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={() => setDeleteOpen(true)}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+            onClick={() => navigate(`/books/${id}/analysis`)}
+            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200"
           >
-            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+            <ScanSearch className="mr-2 h-4 w-4" /> Análise de SKUs
           </Button>
-        )}
+          {canDelete && (
+            <Button
+              variant="outline"
+              onClick={() => setDeleteOpen(true)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Summary cards */}

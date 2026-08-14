@@ -19,6 +19,7 @@ import { Usuarios } from './pages/Usuarios'
 import { Books } from './pages/Books'
 import { ImportBook } from './pages/ImportBook'
 import { DetalheBook } from './pages/DetalheBook'
+import { AnaliseBook } from './pages/AnaliseBook'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -44,6 +45,7 @@ const App = () => (
                 <Route path="/books" element={<Books />} />
                 <Route path="/books/import" element={<ImportBook />} />
                 <Route path="/books/:id" element={<DetalheBook />} />
+                <Route path="/books/:id/analysis" element={<AnaliseBook />} />
               </Route>
 
               <Route element={<RequireRole allowedRoles={['administrator']} />}>

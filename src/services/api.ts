@@ -1,5 +1,16 @@
 import pb from '@/lib/pocketbase/client'
-import { Brand, Store, SKU, Promoter, AuditRule, User, Book, BookPhoto } from '@/types'
+import {
+  Brand,
+  Store,
+  SKU,
+  Promoter,
+  AuditRule,
+  User,
+  Book,
+  BookPhoto,
+  SkuClassification,
+  RuptureReport,
+} from '@/types'
 
 // Helper for file URLs
 export function getFileUrl(
@@ -216,4 +227,39 @@ export async function updateBookPhoto(
 
 export async function deleteBookPhoto(id: string): Promise<boolean> {
   return await pb.collection('book_photos').delete(id)
+}
+
+// SKU CLASSIFICATIONS
+export async function getSkuClassifications(bookId: string): Promise<SkuClassification[]> {
+  return await pb.collection('sku_classifications').getFullList<SkuClassification>({
+    filter: `book = "${bookId}"`,
+    sort: 'store,sku',
+    expand: 'store,sku,matched_photo,reviewer',
+  })
+}
+
+export async function updateSkuClassification(
+  id: string,
+  data: FormData | Partial<SkuClassification>,
+): Promise<SkuClassification> {
+  return await pb.collection('sku_classifications').update<SkuClassification>(id, data)
+}
+
+// RUPTURE REPORTS
+export async function getRuptureReports(filter?: string): Promise<RuptureReport[]> {
+  return await pb.collection('rupture_reports').getFullList<RuptureReport>({
+    filter,
+    sort: '-report_date',
+    expand: 'brand,store,sku',
+  })
+}
+
+export async function createRuptureReport(
+  data: FormData | Partial<RuptureReport>,
+): Promise<RuptureReport> {
+  return await pb.collection('rupture_reports').create<RuptureReport>(data)
+}
+
+export async function deleteRuptureReport(id: string): Promise<boolean> {
+  return await pb.collection('rupture_reports').delete(id)
 }
