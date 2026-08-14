@@ -36,6 +36,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -64,6 +65,9 @@ import {
   ScanSearch,
   ImageOff,
   RefreshCw,
+  Tag,
+  CameraOff,
+  Droplets,
 } from 'lucide-react'
 
 const CATEGORIES: SkuCategory[] = [
@@ -112,6 +116,13 @@ export const AnaliseBook: React.FC = () => {
   const [reviewItem, setReviewItem] = useState<SkuClassification | null>(null)
   const [reviewSaving, setReviewSaving] = useState(false)
   const [reviewNotes, setReviewNotes] = useState('')
+  // Price verification state
+  const [priceChecked, setPriceChecked] = useState(false)
+  const [priceMatch, setPriceMatch] = useState<boolean | null>(null)
+  const [priceObserved, setPriceObserved] = useState('')
+  const [priceExpected, setPriceExpected] = useState('')
+  const [missingPriceTag, setMissingPriceTag] = useState(false)
+  const [missingSplash, setMissingSplash] = useState(false)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -219,6 +230,12 @@ export const AnaliseBook: React.FC = () => {
   const openReview = (c: SkuClassification) => {
     setReviewItem(c)
     setReviewNotes(c.notes || '')
+    setPriceChecked(!!c.price_checked)
+    setPriceMatch(c.price_match ?? null)
+    setPriceObserved(c.price_observed || '')
+    setPriceExpected(c.price_expected || '')
+    setMissingPriceTag(!!c.missing_price_tag)
+    setMissingSplash(!!c.missing_splash)
   }
 
   const saveReview = async (action: 'confirm_present' | 'confirm_absent' | 'keep_review') => {
@@ -229,6 +246,12 @@ export const AnaliseBook: React.FC = () => {
         reviewer: user!.id,
         reviewed_at: new Date().toISOString(),
         notes: reviewNotes,
+        price_checked: priceChecked,
+        price_match: priceChecked ? priceMatch : null,
+        price_observed: priceObserved,
+        price_expected: priceExpected,
+        missing_price_tag: missingPriceTag,
+        missing_splash: missingSplash,
       }
       if (action === 'confirm_present') {
         patch.category = 'presente_pdv'
@@ -237,7 +260,7 @@ export const AnaliseBook: React.FC = () => {
         patch.category = 'ausente_cobrar'
         patch.confidence = 'alta'
       }
-      // keep_review: apenas atualiza notas
+      // keep_review: apenas atualiza notas + preço
       await updateSkuClassification(reviewItem.id, patch)
       setClassifications((prev) =>
         prev.map((c) => (c.id === reviewItem.id ? { ...c, ...patch } : c)),
@@ -487,6 +510,7 @@ export const AnaliseBook: React.FC = () => {
                               <th className="text-left font-semibold px-3 py-2">Classificação</th>
                               <th className="text-left font-semibold px-3 py-2">Confiança</th>
                               <th className="text-left font-semibold px-3 py-2">Notas</th>
+                              <th className="text-left font-semibold px-3 py-2">Preço</th>
                               <th className="text-right font-semibold px-3 py-2">Ação</th>
                             </tr>
                           </thead>
@@ -540,6 +564,9 @@ export const AnaliseBook: React.FC = () => {
                                   <td className="px-3 py-2 text-xs text-slate-500 max-w-xs truncate">
                                     {c.notes || '—'}
                                   </td>
+                                  <td className="px-3 py-2">
+                                    <PriceAlerts compact c={c} />
+                                  </td>
                                   <td className="px-3 py-2 text-right">
                                     <Button
                                       variant="ghost"
@@ -579,6 +606,7 @@ export const AnaliseBook: React.FC = () => {
                     <th className="text-left font-semibold px-3 py-2">Classificação</th>
                     <th className="text-left font-semibold px-3 py-2">Confiança</th>
                     <th className="text-left font-semibold px-3 py-2">Similaridade</th>
+                    <th className="text-left font-semibold px-3 py-2">Preço</th>
                     <th className="text-right font-semibold px-3 py-2">Ação</th>
                   </tr>
                 </thead>
@@ -617,6 +645,9 @@ export const AnaliseBook: React.FC = () => {
                         </td>
                         <td className="px-3 py-2 text-xs text-slate-500">
                           {c.similarity != null ? `${Math.round(c.similarity * 100)}%` : '—'}
+                        </td>
+                        <td className="px-3 py-2">
+                          <PriceAlerts compact c={c} />
                         </td>
                         <td className="px-3 py-2 text-right">
                           <Button
@@ -659,6 +690,18 @@ export const AnaliseBook: React.FC = () => {
               onConfirmAbsent={() => saveReview('confirm_absent')}
               onKeepReview={() => saveReview('keep_review')}
               onClose={() => setReviewItem(null)}
+              priceChecked={priceChecked}
+              setPriceChecked={setPriceChecked}
+              priceMatch={priceMatch}
+              setPriceMatch={setPriceMatch}
+              priceObserved={priceObserved}
+              setPriceObserved={setPriceObserved}
+              priceExpected={priceExpected}
+              setPriceExpected={setPriceExpected}
+              missingPriceTag={missingPriceTag}
+              setMissingPriceTag={setMissingPriceTag}
+              missingSplash={missingSplash}
+              setMissingSplash={setMissingSplash}
             />
           )}
         </SheetContent>
@@ -698,6 +741,18 @@ const ReviewDrawerContent: React.FC<{
   onConfirmAbsent: () => void
   onKeepReview: () => void
   onClose: () => void
+  priceChecked: boolean
+  setPriceChecked: (v: boolean) => void
+  priceMatch: boolean | null
+  setPriceMatch: (v: boolean | null) => void
+  priceObserved: string
+  setPriceObserved: (v: string) => void
+  priceExpected: string
+  setPriceExpected: (v: string) => void
+  missingPriceTag: boolean
+  setMissingPriceTag: (v: boolean) => void
+  missingSplash: boolean
+  setMissingSplash: (v: boolean) => void
 }> = ({
   item,
   sku,
@@ -710,6 +765,18 @@ const ReviewDrawerContent: React.FC<{
   onConfirmAbsent,
   onKeepReview,
   onClose,
+  priceChecked,
+  setPriceChecked,
+  priceMatch,
+  setPriceMatch,
+  priceObserved,
+  setPriceObserved,
+  priceExpected,
+  setPriceExpected,
+  missingPriceTag,
+  setMissingPriceTag,
+  missingSplash,
+  setMissingSplash,
 }) => {
   const skuImgUrl = sku?.image ? getFileUrl(sku, sku.image) : null
   const photoUrl = matchedPhoto?.image_data
@@ -791,6 +858,76 @@ const ReviewDrawerContent: React.FC<{
             placeholder="Observações sobre a validação..."
           />
         </div>
+
+        {/* Price verification */}
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs uppercase tracking-wide text-indigo-700 flex items-center gap-1.5">
+              <Tag className="h-3.5 w-3.5" /> Verificação de Preço
+            </Label>
+            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+              <Checkbox
+                checked={priceChecked}
+                onCheckedChange={(v) => setPriceChecked(v === true)}
+              />
+              Verificar preço
+            </label>
+          </div>
+          {priceChecked && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[11px] text-slate-500">Preço esperado</Label>
+                <Input
+                  value={priceExpected}
+                  onChange={(e) => setPriceExpected(e.target.value)}
+                  placeholder="R$ 0,00"
+                  className="bg-white h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] text-slate-500">Preço observado</Label>
+                <Input
+                  value={priceObserved}
+                  onChange={(e) => setPriceObserved(e.target.value)}
+                  placeholder="R$ 0,00"
+                  className="bg-white h-9 text-sm"
+                />
+              </div>
+              <div className="col-span-2 flex flex-wrap gap-4 text-xs text-slate-600">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={priceMatch === true}
+                    onCheckedChange={(v) => setPriceMatch(v === true ? true : null)}
+                  />
+                  Preço conforme
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={priceMatch === false}
+                    onCheckedChange={(v) => setPriceMatch(v === true ? false : null)}
+                  />
+                  Preço divergente
+                </label>
+              </div>
+              <label className="col-span-2 flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                <Checkbox
+                  checked={missingPriceTag}
+                  onCheckedChange={(v) => setMissingPriceTag(v === true)}
+                />
+                <CameraOff className="h-3.5 w-3.5 text-amber-600" />
+                Sem etiqueta de preço exposta
+              </label>
+              <label className="col-span-2 flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                <Checkbox
+                  checked={missingSplash}
+                  onCheckedChange={(v) => setMissingSplash(v === true)}
+                />
+                <Droplets className="h-3.5 w-3.5 text-amber-600" />
+                Em promoção sem splash visível
+              </label>
+            </div>
+          )}
+        </div>
       </div>
       <SheetFooter className="pt-6 flex-col gap-2 sm:flex-col">
         <Button
@@ -817,5 +954,48 @@ const ReviewDrawerContent: React.FC<{
         </Button>
       </SheetFooter>
     </>
+  )
+}
+
+// Compact price-verification alert badges shown inline in tables.
+const PriceAlerts: React.FC<{ c: SkuClassification; compact?: boolean }> = ({ c }) => {
+  if (!c.price_checked) {
+    return <span className="text-[10px] text-slate-400">—</span>
+  }
+  return (
+    <div className="flex flex-col gap-0.5">
+      {c.price_match === false && (
+        <Badge
+          variant="outline"
+          className="text-[9px] bg-red-100 text-red-800 border-red-200 w-fit"
+        >
+          <Tag className="h-2.5 w-2.5 mr-0.5" /> Divergente
+        </Badge>
+      )}
+      {c.price_match === true && (
+        <Badge
+          variant="outline"
+          className="text-[9px] bg-emerald-100 text-emerald-800 border-emerald-200 w-fit"
+        >
+          <Tag className="h-2.5 w-2.5 mr-0.5" /> Conforme
+        </Badge>
+      )}
+      {c.missing_price_tag && (
+        <Badge
+          variant="outline"
+          className="text-[9px] bg-amber-100 text-amber-800 border-amber-200 w-fit"
+        >
+          <CameraOff className="h-2.5 w-2.5 mr-0.5" /> Sem preço
+        </Badge>
+      )}
+      {c.missing_splash && (
+        <Badge
+          variant="outline"
+          className="text-[9px] bg-amber-100 text-amber-800 border-amber-200 w-fit"
+        >
+          <Droplets className="h-2.5 w-2.5 mr-0.5" /> Sem splash
+        </Badge>
+      )}
+    </div>
   )
 }

@@ -315,6 +315,13 @@ export interface SkuClassification {
   reviewer?: string
   reviewed_at?: string
   notes?: string
+  // Price verification fields
+  price_checked?: boolean
+  price_match?: boolean | null
+  price_observed?: string
+  price_expected?: string
+  missing_price_tag?: boolean
+  missing_splash?: boolean
   expand?: {
     book?: Book
     store?: Store
@@ -324,4 +331,42 @@ export interface SkuClassification {
   }
   created: string
   updated: string
+}
+
+// ---- STORE SCORE / PROMOTER RANKING ----
+export interface StoreScore {
+  storeId: string
+  store?: Store
+  present: number
+  absent: number
+  justifiedRupture: number
+  penalties: number
+  eligible: number
+  score: number // 0..10
+  classifications: SkuClassification[]
+}
+
+export interface PromoterScore {
+  promoterId: string
+  promoter?: Promoter
+  brandNames: string[]
+  storeCount: number
+  avgScore: number
+  trend: 'up' | 'down' | 'stable'
+  storeScores: StoreScore[]
+}
+
+export const SCORE_BADGE: Record<string, string> = {
+  green:
+    'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300',
+  yellow: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-300',
+  orange: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950 dark:text-orange-300',
+  red: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-300',
+}
+
+export function scoreColor(score: number): 'green' | 'yellow' | 'orange' | 'red' {
+  if (score >= 8) return 'green'
+  if (score >= 6) return 'yellow'
+  if (score >= 4) return 'orange'
+  return 'red'
 }

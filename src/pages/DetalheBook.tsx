@@ -54,6 +54,7 @@ import {
   Trash2,
   FileSpreadsheet,
   ScanSearch,
+  Award,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import { ANALYSIS_STATUS_LABELS, ANALYSIS_STATUS_BADGE, AnalysisStatus } from '@/types'
@@ -282,13 +283,20 @@ export const DetalheBook: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             onClick={() => navigate(`/books/${id}/analysis`)}
             className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200"
           >
             <ScanSearch className="mr-2 h-4 w-4" /> Análise de SKUs
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/books/${id}/notas`)}
+            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200"
+          >
+            <Award className="mr-2 h-4 w-4" /> Notas
           </Button>
           {canDelete && (
             <Button
@@ -299,7 +307,7 @@ export const DetalheBook: React.FC = () => {
               <Trash2 className="mr-2 h-4 w-4" /> Excluir
             </Button>
           )}
-        </div>
+        </div>{' '}
       </div>
 
       {/* Summary cards */}

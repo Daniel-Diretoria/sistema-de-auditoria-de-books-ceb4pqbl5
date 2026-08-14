@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T20:23:24.347Z",
+  "generatedAt": "2026-08-14T20:36:25.973Z",
   "collections": [
     {
       "name": "users",
@@ -824,6 +824,42 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "price_checked",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "price_match",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "price_observed",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "price_expected",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "missing_price_tag",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "missing_splash",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

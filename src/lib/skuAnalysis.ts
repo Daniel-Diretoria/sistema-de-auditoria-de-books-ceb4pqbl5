@@ -51,6 +51,7 @@ export async function runBookAnalysis(
     book.expand?.brand ||
     (await pb.collection('brands').getOne<Brand>(brandId, { expand: 'stores' }))
   const walletStores: Store[] = brand.expand?.stores || []
+  const auditDate = book.audit_date
   if (walletStores.length === 0) {
     // re-fetch stores via relation
     const all = await pb.collection('stores').getFullList<Store>({ sort: 'number' })
@@ -172,6 +173,12 @@ export async function runBookAnalysis(
     similarity?: number
     matched_photo?: string
     notes?: string
+    price_checked?: boolean
+    price_match?: boolean | null
+    price_observed?: string
+    price_expected?: string
+    missing_price_tag?: boolean
+    missing_splash?: boolean
   }> = []
 
   let processed = 0
@@ -222,11 +229,32 @@ export async function runBookAnalysis(
       let matchedPhotoId: string | undefined
       let notes: string | undefined
 
+      let priceFields: {
+        price_checked?: boolean
+        price_match?: boolean | null
+        price_observed?: string
+        price_expected?: string
+        missing_price_tag?: boolean
+        missing_splash?: boolean
+      } = {}
+
       if (bestSim >= PRESENCE_THRESHOLD && bestPhoto) {
         category = 'presente_pdv'
         confidence = bestSim >= 0.72 ? 'alta' : 'media'
         matchedPhotoId = bestPhoto.id
         notes = `Similaridade ${Math.round(bestSim * 100)}% com foto do slide ${bestPhoto.slide_number}.`
+        // Price verification (heuristic: high-confidence detections are
+        // considered checkable). When a price tag cannot be resolved from the
+        // photo text we leave the fields null for manual confirmation.
+        const expectedPrice = expectedPriceForSku(sku, auditDate)
+        priceFields = {
+          price_checked: true,
+          price_expected: expectedPrice,
+          price_match: null,
+          price_observed: '',
+          missing_price_tag: false,
+          missing_splash: sku.requires_splash && isInPromotion(sku, auditDate) ? true : false,
+        }
       } else if (bestSim >= REVIEW_THRESHOLD && bestPhoto) {
         // baixa confiança — precisa revisão manual; marcamos como presente
         // em revisão (category presente_pdv, confidence baixa) para o analista
@@ -235,6 +263,11 @@ export async function runBookAnalysis(
         confidence = 'baixa'
         matchedPhotoId = bestPhoto.id
         notes = `Baixa confiança (${Math.round(bestSim * 100)}%) — revisar manualmente.`
+        priceFields = {
+          price_checked: false,
+          price_expected: expectedPriceForSku(sku, auditDate),
+          price_match: null,
+        }
       } else {
         // Não detectado — checar ruptura
         const rupture = ruptureByKey.get(`${store.id}|${sku.id}`)
@@ -269,6 +302,7 @@ export async function runBookAnalysis(
         similarity: bestSim || undefined,
         matched_photo: matchedPhotoId,
         notes,
+        ...priceFields,
       })
 
       processed++
@@ -318,4 +352,26 @@ export async function runBookAnalysis(
     updated: 0,
     byCategory,
   }
+}
+
+// ---- Price helpers ----
+
+function isInPromotion(sku: SKU, auditDate?: string): boolean {
+  if (!sku.promo_price || sku.promo_price <= 0) return false
+  if (!auditDate) return false
+  const d = auditDate.slice(0, 10)
+  if (sku.promo_start && d < sku.promo_start.slice(0, 10)) return false
+  if (sku.promo_end && d > sku.promo_end.slice(0, 10)) return false
+  return true
+}
+
+function expectedPriceForSku(sku: SKU, auditDate?: string): string {
+  const promo = isInPromotion(sku, auditDate) ? sku.promo_price : 0
+  const price = promo > 0 ? promo : sku.normal_price
+  return (
+    'R$ ' +
+    Number(price || 0)
+      .toFixed(2)
+      .replace('.', ',')
+  )
 }
