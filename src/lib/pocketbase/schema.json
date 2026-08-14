@@ -1,0 +1,402 @@
+{
+  "generatedAt": "2026-08-14T19:37:26.244Z",
+  "collections": [
+    {
+      "name": "users",
+      "type": "auth",
+      "apiRules": {
+        "list": "@request.auth.role = 'administrator' || @request.auth.id = id",
+        "view": "@request.auth.role = 'administrator' || @request.auth.id = id",
+        "create": "@request.auth.role = 'administrator'",
+        "update": "@request.auth.role = 'administrator'",
+        "delete": "@request.auth.role = 'administrator'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["administrator", "analista_books", "supervisor", "gestor"]
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
+        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "name": "stores",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'administrator'",
+        "update": "@request.auth.role = 'administrator'",
+        "delete": "@request.auth.role = 'administrator'"
+      },
+      "fields": [
+        {
+          "name": "number",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "address",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "network",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "region",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Sul", "Sudeste", "Centro-Oeste", "Nordeste", "Norte"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_stores_number ON stores (number)"]
+    },
+    {
+      "name": "brands",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'administrator' || @request.auth.role = 'gestor' || (@request.auth.role = 'analista_books' && analysts ~ @request.auth.id) || (@request.auth.role = 'supervisor' && supervisors ~ @request.auth.id)",
+        "view": "@request.auth.role = 'administrator' || @request.auth.role = 'gestor' || (@request.auth.role = 'analista_books' && analysts ~ @request.auth.id) || (@request.auth.role = 'supervisor' && supervisors ~ @request.auth.id)",
+        "create": "@request.auth.role = 'administrator'",
+        "update": "@request.auth.role = 'administrator'",
+        "delete": "@request.auth.role = 'administrator'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "logo",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "frequency",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["diaria", "seg_qua_sex", "ter_qui_sab", "seg_qua_sex_sab"]
+        },
+        {
+          "name": "stores",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "stores"
+        },
+        {
+          "name": "analysts",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "supervisors",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_brands_name ON brands (name)"]
+    },
+    {
+      "name": "skus",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'administrator' || (@request.auth.role = 'analista_books' && brand.analysts ~ @request.auth.id)",
+        "update": "@request.auth.role = 'administrator' || (@request.auth.role = 'analista_books' && brand.analysts ~ @request.auth.id)",
+        "delete": "@request.auth.role = 'administrator' || (@request.auth.role = 'analista_books' && brand.analysts ~ @request.auth.id)"
+      },
+      "fields": [
+        {
+          "name": "code",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "brand",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "brands"
+        },
+        {
+          "name": "image",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "normal_price",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "promo_price",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "promo_start",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "promo_end",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "main_gondola",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "min_quantity",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "requires_splash",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_skus_brand_code ON skus (brand, code)"]
+    },
+    {
+      "name": "promoters",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books'",
+        "update": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books'",
+        "delete": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "brands",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "brands"
+        },
+        {
+          "name": "stores",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "stores"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "audit_rules",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'administrator' || (@request.auth.role = 'analista_books' && brand.analysts ~ @request.auth.id)",
+        "update": "@request.auth.role = 'administrator' || (@request.auth.role = 'analista_books' && brand.analysts ~ @request.auth.id)",
+        "delete": "@request.auth.role = 'administrator' || (@request.auth.role = 'analista_books' && brand.analysts ~ @request.auth.id)"
+      },
+      "fields": [
+        {
+          "name": "brand",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "brands"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "criteria",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "mandatory_layout",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "requires_splash",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "min_facings",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_audit_rules_brand ON audit_rules (brand)"]
+    }
+  ]
+}
