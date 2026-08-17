@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   CameraOff,
+  FileDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -123,6 +124,13 @@ export const NotasBook: React.FC = () => {
             </div>
           </div>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => navigate(`/books/${id}/export`)}
+          className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200"
+        >
+          <FileDown className="mr-2 h-4 w-4" /> Exportar PDF
+        </Button>
       </div>
 
       {/* Average Card */}

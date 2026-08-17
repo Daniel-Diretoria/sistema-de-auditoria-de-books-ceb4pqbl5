@@ -9,6 +9,7 @@ import Layout from './components/Layout'
 
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
+import { Comparacao } from './pages/Comparacao'
 import { Marcas } from './pages/Marcas'
 import { DetalheMarca } from './pages/DetalheMarca'
 import { Lojas } from './pages/Lojas'
@@ -23,6 +24,7 @@ import { AnaliseBook } from './pages/AnaliseBook'
 import { Ruptura } from './pages/Ruptura'
 import { ImportRuptura } from './pages/ImportRuptura'
 import { NotasBook } from './pages/NotasBook'
+import { ExportBook } from './pages/ExportBook'
 import { Ranking } from './pages/Ranking'
 import NotFound from './pages/NotFound'
 
@@ -51,6 +53,7 @@ const App = () => (
                 <Route path="/books/:id" element={<DetalheBook />} />
                 <Route path="/books/:id/analysis" element={<AnaliseBook />} />
                 <Route path="/books/:id/notas" element={<NotasBook />} />
+                <Route path="/books/:id/export" element={<ExportBook />} />
               </Route>
 
               <Route
@@ -60,6 +63,7 @@ const App = () => (
               >
                 <Route path="/ruptura" element={<Ruptura />} />
                 <Route path="/ruptura/import" element={<ImportRuptura />} />
+                <Route path="/comparacao" element={<Comparacao />} />
               </Route>
 
               <Route element={<RequireRole allowedRoles={['administrator']} />}>

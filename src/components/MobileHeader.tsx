@@ -14,6 +14,7 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   Award,
+  Scale,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Logo } from '@/components/Logo'
@@ -88,6 +89,12 @@ export const MobileHeader: React.FC = () => {
       path: '/ranking',
       icon: Award,
       roles: ['administrator', 'analista_books', 'supervisor', 'gestor'],
+    },
+    {
+      label: 'Comparação',
+      path: '/comparacao',
+      icon: Scale,
+      roles: ['administrator', 'analista_books', 'supervisor'],
     },
     { label: 'Usuários', path: '/usuarios', icon: UserCog, roles: ['administrator'] },
   ]

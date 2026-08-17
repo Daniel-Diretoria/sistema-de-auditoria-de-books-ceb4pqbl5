@@ -55,6 +55,7 @@ import {
   FileSpreadsheet,
   ScanSearch,
   Award,
+  FileDown,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import { ANALYSIS_STATUS_LABELS, ANALYSIS_STATUS_BADGE, AnalysisStatus } from '@/types'
@@ -297,6 +298,13 @@ export const DetalheBook: React.FC = () => {
             className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200"
           >
             <Award className="mr-2 h-4 w-4" /> Notas
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/books/${id}/export`)}
+            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200"
+          >
+            <FileDown className="mr-2 h-4 w-4" /> Exportar PDF
           </Button>
           {canDelete && (
             <Button
