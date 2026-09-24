@@ -17,6 +17,8 @@ import { SKUs } from './pages/SKUs'
 import { Promotores } from './pages/Promotores'
 import { Regras } from './pages/Regras'
 import { Usuarios } from './pages/Usuarios'
+import { Integracoes } from './pages/Integracoes'
+import { ImportTradePro } from './pages/ImportTradePro'
 import { Books } from './pages/Books'
 import { ImportBook } from './pages/ImportBook'
 import { DetalheBook } from './pages/DetalheBook'
@@ -68,6 +70,8 @@ const App = () => (
 
               <Route element={<RequireRole allowedRoles={['administrator']} />}>
                 <Route path="/usuarios" element={<Usuarios />} />
+                <Route path="/integracoes" element={<Integracoes />} />
+                <Route path="/integracoes/tradepro/import" element={<ImportTradePro />} />
               </Route>
 
               <Route path="/ranking" element={<Ranking />} />

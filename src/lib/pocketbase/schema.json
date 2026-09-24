@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T15:03:58.168Z",
+  "generatedAt": "2026-09-24T21:30:37.977Z",
   "collections": [
     {
       "name": "users",
@@ -870,6 +870,78 @@
         "CREATE INDEX idx_sku_classifications_confidence ON sku_classifications (confidence)",
         "CREATE UNIQUE INDEX idx_sku_classifications_unique ON sku_classifications (book, store, sku)"
       ]
+    },
+    {
+      "name": "integrations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'administrator'",
+        "view": "@request.auth.role = 'administrator'",
+        "create": "@request.auth.role = 'administrator'",
+        "update": "@request.auth.role = 'administrator'",
+        "delete": "@request.auth.role = 'administrator'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "provider",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "base_url",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "api_key",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "environment",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["producao", "homologacao"]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["conectado", "nao_conectado", "erro"]
+        },
+        {
+          "name": "config_json",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_integrations_provider ON integrations (provider)"]
     }
   ]
 }

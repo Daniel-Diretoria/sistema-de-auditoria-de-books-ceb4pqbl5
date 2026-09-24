@@ -370,3 +370,20 @@ export function scoreColor(score: number): 'green' | 'yellow' | 'orange' | 'red'
   if (score >= 4) return 'orange'
   return 'red'
 }
+
+// ---- INTEGRAÇÕES ----
+export type IntegrationEnvironment = 'producao' | 'homologacao'
+export type IntegrationStatus = 'conectado' | 'nao_conectado' | 'erro'
+
+export interface Integration {
+  id: string
+  name: string
+  provider: 'tradepro' | string
+  base_url?: string
+  api_key?: string
+  environment?: IntegrationEnvironment
+  status: IntegrationStatus
+  config_json?: any
+  created: string
+  updated: string
+}

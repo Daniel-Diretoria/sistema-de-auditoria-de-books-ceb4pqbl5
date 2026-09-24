@@ -10,6 +10,7 @@ import {
   BookPhoto,
   SkuClassification,
   RuptureReport,
+  Integration,
 } from '@/types'
 
 // Helper for file URLs
@@ -262,4 +263,31 @@ export async function createRuptureReport(
 
 export async function deleteRuptureReport(id: string): Promise<boolean> {
   return await pb.collection('rupture_reports').delete(id)
+}
+
+// INTEGRAÇÕES (INTEGRATIONS)
+export async function getIntegrations(): Promise<Integration[]> {
+  return await pb.collection('integrations').getFullList<Integration>({
+    sort: 'name',
+  })
+}
+
+export async function getIntegrationByProvider(provider: string): Promise<Integration | null> {
+  try {
+    return await pb
+      .collection('integrations')
+      .getFirstListItem<Integration>(`provider = "${provider}"`)
+  } catch (_) {
+    return null
+  }
+}
+
+export async function saveIntegration(
+  data: Partial<Integration> & { provider: string; name: string },
+): Promise<Integration> {
+  const existing = await getIntegrationByProvider(data.provider)
+  if (existing) {
+    return await pb.collection('integrations').update<Integration>(existing.id, data)
+  }
+  return await pb.collection('integrations').create<Integration>(data)
 }

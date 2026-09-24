@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   Award,
   Scale,
+  Plug,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Logo } from '@/components/Logo'
@@ -101,6 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
       roles: ['administrator', 'analista_books', 'supervisor'],
     },
     { label: 'Usuários', path: '/usuarios', icon: UserCog, roles: ['administrator'] },
+    { label: 'Integrações', path: '/integracoes', icon: Plug, roles: ['administrator'] },
   ]
 
   const allowedNavItems = navItems.filter((item) => item.roles.includes(user.role))
