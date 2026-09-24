@@ -64,7 +64,11 @@ export const Integracoes: React.FC = () => {
       return 'Sua sessão expirou ou não é válida. Faça login novamente para continuar.'
     }
     if (status === 403) {
-      return 'Você não tem permissão para alterar as configurações de integração. Apenas administradores podem realizar esta ação.'
+      return 'Você não tem permissão para gerenciar integrações. Apenas administradores podem realizar esta ação.'
+    }
+    const rawMsg = err?.data?.message || err?.response?.data?.message || err?.message || ''
+    if (rawMsg.includes('Failed to create record') || rawMsg.includes('Failed to update record')) {
+      return 'Não foi possível salvar as configurações da integração. Já existe um registro ativo para este provedor ou os dados informados não puderam ser gravados.'
     }
     if (err?.response?.data?.provider?.message) {
       return `Erro no provedor: ${err.response.data.provider.message}`
@@ -161,59 +165,78 @@ export const Integracoes: React.FC = () => {
     }
 
     try {
-      // Se houver alterações não salvas nos campos em tela, persistir antes de testar
-      // para garantir que o backend teste as credenciais digitadas mais recentes
-      if (
-        baseUrl.trim() !== (integration?.base_url || '') ||
-        apiKey.trim() !== (integration?.api_key || '') ||
-        environment !== (integration?.environment || 'producao')
-      ) {
-        const saved = await saveIntegration({
-          id: integration?.id,
-          provider: 'tradepro',
-          name: 'TradePRO',
-          base_url: baseUrl.trim(),
-          api_key: apiKey.trim(),
-          environment,
-          status: 'nao_conectado',
-          config_json: {
-            description: 'Integração de dados de PDV, lojas, rotas e auditoria TradePRO',
-            updated_by: 'Administrador',
-            last_saved_at: new Date().toISOString(),
-          },
-        })
-        setIntegration(saved)
+      // Tenta persistir previamente se houver alterações não salvas na tela,
+      // sem interromper o teste caso o salvamento encontre algum impedimento
+      try {
+        if (
+          baseUrl.trim() !== (integration?.base_url || '') ||
+          apiKey.trim() !== (integration?.api_key || '') ||
+          environment !== (integration?.environment || 'producao')
+        ) {
+          const saved = await saveIntegration({
+            id: integration?.id,
+            provider: 'tradepro',
+            name: 'TradePRO',
+            base_url: baseUrl.trim(),
+            api_key: apiKey.trim(),
+            environment,
+            status: 'nao_conectado',
+            config_json: {
+              description: 'Integração de dados de PDV, lojas, rotas e auditoria TradePRO',
+              updated_by: 'Administrador',
+              last_saved_at: new Date().toISOString(),
+            },
+          })
+          setIntegration(saved)
+        }
+      } catch (saveErr) {
+        console.warn('Não foi possível pré-salvar as credenciais antes do teste:', saveErr)
       }
 
-      // Chama a rota do backend que testa a API TradePRO de verdade (servidor → servidor)
+      // Envia as credenciais informadas diretamente ao endpoint de teste do backend
+      // O hook do backend testa a URL fornecida e não precisa criar/recriar registros
       const resp = await pb.send('/backend/v1/tradepro/test', {
         method: 'POST',
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          base_url: baseUrl.trim(),
+          api_key: apiKey.trim(),
+        }),
       })
 
       setTestResult({
         success: !!resp.ok,
-        message: resp.message || (resp.ok ? 'Conexão OK.' : 'Falha na conexão.'),
+        message:
+          resp.message || (resp.ok ? 'Conexão estabelecida com sucesso.' : 'Falha na conexão.'),
         details: resp.details || resp.raw || undefined,
       })
 
       // Recarrega o registro para sincronizar o status atualizado pelo hook (conectado / erro)
-      const updatedInteg = await getIntegrationByProvider('tradepro')
-      if (updatedInteg) {
-        setIntegration(updatedInteg)
+      try {
+        const updatedInteg = await getIntegrationByProvider('tradepro')
+        if (updatedInteg) {
+          setIntegration(updatedInteg)
+        }
+      } catch {
+        /* intentionally ignored */
       }
     } catch (err: any) {
+      console.error('Erro no teste de conexão:', err)
       const status = err?.status || err?.response?.status
-      const errorMsg =
-        status === 401
-          ? 'Sua sessão expirou. Faça login novamente antes de testar a conexão.'
-          : status === 403
-            ? 'Apenas administradores podem testar a conexão com a API TradePRO.'
-            : err.message || 'Erro ao executar o teste de conexão.'
+      let errorMsg = 'Não foi possível concluir o teste de conexão. Tente novamente.'
+
+      if (status === 401) {
+        errorMsg = 'Sua sessão expirou. Faça login novamente antes de testar a conexão.'
+      } else if (status === 403) {
+        errorMsg = 'Apenas administradores podem testar a conexão com a API TradePRO.'
+      } else if (err?.data?.message && !err.data.message.includes('Failed to create record')) {
+        errorMsg = err.data.message
+      } else if (err?.message && !err.message.includes('Failed to create record')) {
+        errorMsg = err.message
+      }
 
       setTestResult({
         success: false,
-        message: 'Falha no teste de conexão.',
+        message: 'Não foi possível concluir o teste de conexão.',
         details: errorMsg,
       })
     } finally {

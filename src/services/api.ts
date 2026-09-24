@@ -295,13 +295,26 @@ export async function saveIntegration(
   // If an id was supplied directly, update by ID
   if (data.id) {
     const { id, ...payload } = data
-    return await pb.collection('integrations').update<Integration>(id, payload)
+    try {
+      return await pb.collection('integrations').update<Integration>(id, payload)
+    } catch (err: any) {
+      // Se falhar atualização por ID inválido/inexistente, tenta localizar por provider
+      if (err?.status !== 404) throw err
+    }
   }
 
-  // Otherwise check if a record with this provider already exists
-  const existing = await getIntegrationByProvider(data.provider)
-  if (existing) {
-    return await pb.collection('integrations').update<Integration>(existing.id, data)
+  // Localiza registro pelo provider para nunca violar o índice único idx_integrations_provider
+  try {
+    const existing = await getIntegrationByProvider(data.provider)
+    if (existing) {
+      const { id: _, ...payload } = data
+      return await pb.collection('integrations').update<Integration>(existing.id, payload)
+    }
+  } catch (err: any) {
+    // Se for erro de permissão ou rede, propaga
+    if (err?.status === 401 || err?.status === 403) throw err
   }
+
+  // Se realmente não existir nenhum registro para o provider, cria
   return await pb.collection('integrations').create<Integration>(data)
 }
