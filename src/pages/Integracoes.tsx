@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
 import { getIntegrationByProvider, saveIntegration } from '@/services/api'
+import pb from '@/lib/pocketbase/client'
 import { Integration, IntegrationEnvironment } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -131,32 +132,23 @@ export const Integracoes: React.FC = () => {
     }
 
     try {
-      // Chamada genérica de ping/teste com timeout curto
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 6000)
+      // Chama a rota do backend que testa a API TradePRO de verdade (servidor → servidor)
+      const resp = await pb.send('/backend/v1/tradepro/test', {
+        method: 'POST',
+        body: JSON.stringify({}),
+      })
 
-      try {
-        await fetch(baseUrl.trim(), {
-          method: 'HEAD',
-          mode: 'no-cors',
-          signal: controller.signal,
-        })
-        clearTimeout(timeoutId)
-        setTestResult({
-          success: true,
-          message: 'Endpoint alcançável! Credenciais registradas no ambiente selecionado.',
-          details:
-            'Aguardando liberação de rotas específicas pelo time técnico TradePRO ou sincronização sob demanda.',
-        })
-      } catch (err: any) {
-        clearTimeout(timeoutId)
-        setTestResult({
-          success: false,
-          message: 'Endpoint informado não respondeu ao teste de ping.',
-          details:
-            'Verifique se a URL base está correta ou se o acesso exige IP fixo / VPN contratada junto à TradePRO.',
-        })
-      }
+      setTestResult({
+        success: !!resp.ok,
+        message: resp.message || (resp.ok ? 'Conexão OK.' : 'Falha na conexão.'),
+        details: resp.details || resp.raw || undefined,
+      })
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        message: 'Erro ao executar o teste de conexão.',
+        details: err.message,
+      })
     } finally {
       setTesting(false)
     }
