@@ -276,15 +276,29 @@ export async function getIntegrationByProvider(provider: string): Promise<Integr
   try {
     return await pb
       .collection('integrations')
-      .getFirstListItem<Integration>(`provider = "${provider}"`)
-  } catch (_) {
-    return null
+      .getFirstListItem<Integration>(pb.filter('provider = {:provider}', { provider }))
+  } catch (err: any) {
+    // If not found (404), return null so callers know no record exists.
+    // Re-throw any other errors (such as 401 Unauthorized or 403 Forbidden)
+    // so caller knows why the request failed (e.g. expired session) rather than
+    // falsely assuming the record does not exist.
+    if (err?.status === 404) {
+      return null
+    }
+    throw err
   }
 }
 
 export async function saveIntegration(
   data: Partial<Integration> & { provider: string; name: string },
 ): Promise<Integration> {
+  // If an id was supplied directly, update by ID
+  if (data.id) {
+    const { id, ...payload } = data
+    return await pb.collection('integrations').update<Integration>(id, payload)
+  }
+
+  // Otherwise check if a record with this provider already exists
   const existing = await getIntegrationByProvider(data.provider)
   if (existing) {
     return await pb.collection('integrations').update<Integration>(existing.id, data)

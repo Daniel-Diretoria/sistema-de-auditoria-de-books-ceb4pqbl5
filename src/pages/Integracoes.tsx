@@ -58,6 +58,23 @@ export const Integracoes: React.FC = () => {
     loadData()
   }, [])
 
+  const formatErrorMessage = (err: any): string => {
+    const status = err?.status || err?.response?.status
+    if (status === 401) {
+      return 'Sua sessão expirou ou não é válida. Faça login novamente para continuar.'
+    }
+    if (status === 403) {
+      return 'Você não tem permissão para alterar as configurações de integração. Apenas administradores podem realizar esta ação.'
+    }
+    if (err?.response?.data?.provider?.message) {
+      return `Erro no provedor: ${err.response.data.provider.message}`
+    }
+    if (err?.data?.message) {
+      return err.data.message
+    }
+    return err?.message || 'Ocorreu um erro inesperado ao processar a requisição.'
+  }
+
   const loadData = async () => {
     try {
       setLoading(true)
@@ -67,11 +84,14 @@ export const Integracoes: React.FC = () => {
         setBaseUrl(data.base_url || '')
         setApiKey(data.api_key || '')
         setEnvironment(data.environment || 'producao')
+      } else {
+        setIntegration(null)
       }
     } catch (err: any) {
+      const msg = formatErrorMessage(err)
       toast({
         title: 'Erro ao carregar configurações',
-        description: err.message,
+        description: msg,
         variant: 'destructive',
       })
     } finally {
@@ -82,12 +102,16 @@ export const Integracoes: React.FC = () => {
   const handleSave = async () => {
     try {
       setSaving(true)
-      const isConnected = !!(baseUrl.trim() && apiKey.trim())
+      const trimmedBaseUrl = baseUrl.trim()
+      const trimmedApiKey = apiKey.trim()
+      const isConnected = !!(trimmedBaseUrl && trimmedApiKey)
+
       const saved = await saveIntegration({
+        id: integration?.id,
         provider: 'tradepro',
         name: 'TradePRO',
-        base_url: baseUrl.trim(),
-        api_key: apiKey.trim(),
+        base_url: trimmedBaseUrl,
+        api_key: trimmedApiKey,
         environment,
         status: isConnected ? 'conectado' : 'nao_conectado',
         config_json: {
@@ -97,14 +121,19 @@ export const Integracoes: React.FC = () => {
         },
       })
       setIntegration(saved)
+      setBaseUrl(saved.base_url || '')
+      setApiKey(saved.api_key || '')
+      setEnvironment(saved.environment || 'producao')
+
       toast({
-        title: 'Configurações salvas',
-        description: 'Parâmetros da integração TradePRO atualizados com sucesso.',
+        title: 'Configurações salvas com sucesso',
+        description: 'Os parâmetros da integração TradePRO foram gravados no banco de dados.',
       })
     } catch (err: any) {
+      const msg = formatErrorMessage(err)
       toast({
-        title: 'Erro ao salvar',
-        description: err.message,
+        title: 'Erro ao salvar configurações',
+        description: msg,
         variant: 'destructive',
       })
     } finally {
@@ -132,6 +161,30 @@ export const Integracoes: React.FC = () => {
     }
 
     try {
+      // Se houver alterações não salvas nos campos em tela, persistir antes de testar
+      // para garantir que o backend teste as credenciais digitadas mais recentes
+      if (
+        baseUrl.trim() !== (integration?.base_url || '') ||
+        apiKey.trim() !== (integration?.api_key || '') ||
+        environment !== (integration?.environment || 'producao')
+      ) {
+        const saved = await saveIntegration({
+          id: integration?.id,
+          provider: 'tradepro',
+          name: 'TradePRO',
+          base_url: baseUrl.trim(),
+          api_key: apiKey.trim(),
+          environment,
+          status: 'nao_conectado',
+          config_json: {
+            description: 'Integração de dados de PDV, lojas, rotas e auditoria TradePRO',
+            updated_by: 'Administrador',
+            last_saved_at: new Date().toISOString(),
+          },
+        })
+        setIntegration(saved)
+      }
+
       // Chama a rota do backend que testa a API TradePRO de verdade (servidor → servidor)
       const resp = await pb.send('/backend/v1/tradepro/test', {
         method: 'POST',
@@ -143,11 +196,25 @@ export const Integracoes: React.FC = () => {
         message: resp.message || (resp.ok ? 'Conexão OK.' : 'Falha na conexão.'),
         details: resp.details || resp.raw || undefined,
       })
+
+      // Recarrega o registro para sincronizar o status atualizado pelo hook (conectado / erro)
+      const updatedInteg = await getIntegrationByProvider('tradepro')
+      if (updatedInteg) {
+        setIntegration(updatedInteg)
+      }
     } catch (err: any) {
+      const status = err?.status || err?.response?.status
+      const errorMsg =
+        status === 401
+          ? 'Sua sessão expirou. Faça login novamente antes de testar a conexão.'
+          : status === 403
+            ? 'Apenas administradores podem testar a conexão com a API TradePRO.'
+            : err.message || 'Erro ao executar o teste de conexão.'
+
       setTestResult({
         success: false,
-        message: 'Erro ao executar o teste de conexão.',
-        details: err.message,
+        message: 'Falha no teste de conexão.',
+        details: errorMsg,
       })
     } finally {
       setTesting(false)
