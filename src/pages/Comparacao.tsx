@@ -281,23 +281,32 @@ export const Comparacao: React.FC = () => {
       {/* Brand + book selectors */}
       <Card>
         <CardContent className="p-5 space-y-4">
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Marca
-            </label>
-            <Select value={brandId} onValueChange={setBrandId}>
-              <SelectTrigger className="w-full sm:w-80 bg-white mt-1">
-                <SelectValue placeholder="Selecione uma marca" />
-              </SelectTrigger>
-              <SelectContent>
-                {brands.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {brands.length === 0 ? (
+            <div className="text-center py-6 text-slate-500">
+              <p className="text-sm font-medium">Nenhuma marca cadastrada no sistema.</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Cadastre marcas e importe books para utilizar a comparação.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                Marca
+              </label>
+              <Select value={brandId} onValueChange={setBrandId}>
+                <SelectTrigger className="w-full sm:w-80 bg-white mt-1">
+                  <SelectValue placeholder="Selecione uma marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  {brands.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {brandId && (
             <>
@@ -599,7 +608,9 @@ const BookSummaryCard: React.FC<{
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] text-slate-500 uppercase tracking-wide">Nota média</p>
-            <p className={cn('text-2xl font-bold', SCORE_BADGE[color])}>{average.toFixed(1)}</p>
+            <p className={cn('text-2xl font-bold', SCORE_BADGE[color])}>
+              {average > 0 ? average.toFixed(1) : '—'}
+            </p>
           </div>
           <div className="text-right">
             <p className="text-[10px] text-slate-500 uppercase tracking-wide">Lojas</p>

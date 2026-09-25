@@ -142,19 +142,21 @@ export const NotasBook: React.FC = () => {
               SCORE_BADGE[avgColor],
             )}
           >
-            {average.toFixed(1)}
+            {scores.length > 0 && average > 0 ? average.toFixed(1) : '—'}
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold text-slate-700 flex items-center gap-2">
               <Award className="h-4 w-4 text-indigo-600" /> Nota Média do Book
             </p>
             <p className="text-xs text-slate-500 mt-0.5">
-              Média das notas de {scores.length} loja{scores.length !== 1 ? 's' : ''} auditadas
+              {scores.length > 0
+                ? `Média das notas de ${scores.length} loja${scores.length !== 1 ? 's' : ''} auditadas`
+                : 'Aguardando auditoria de lojas'}
             </p>
             <div className="mt-2 h-2 rounded-full bg-slate-200 overflow-hidden max-w-md">
               <div
                 className={cn('h-full rounded-full', scoreBarColor(avgColor))}
-                style={{ width: `${(average / 10) * 100}%` }}
+                style={{ width: `${scores.length > 0 ? (average / 10) * 100 : 0}%` }}
               />
             </div>
           </div>

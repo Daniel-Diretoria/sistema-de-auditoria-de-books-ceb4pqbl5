@@ -146,12 +146,20 @@ export const Dashboard: React.FC = () => {
               </p>
               <div className="flex items-baseline gap-1 mt-2">
                 <h3 className="text-3xl font-bold text-slate-900">
-                  {loading ? '—' : metrics!.averageScore.toFixed(1)}
+                  {loading || !metrics
+                    ? '—'
+                    : metrics.averageScore > 0
+                      ? metrics.averageScore.toFixed(1)
+                      : '—'}
                 </h3>
                 <span className="text-sm text-slate-400 font-medium">/10</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                {loading || !metrics ? '' : `${metrics.completedBooks} book(s) concluído(s)`}
+                {loading || !metrics
+                  ? ''
+                  : metrics.completedBooks > 0
+                    ? `${metrics.completedBooks} book(s) concluído(s)`
+                    : 'Nenhum book concluído'}
               </p>
             </div>
             <CircularScore value={avgPct} color={avgColor} loading={loading} />
@@ -166,7 +174,7 @@ export const Dashboard: React.FC = () => {
                 Total de Books
               </p>
               <h3 className="text-3xl font-bold text-slate-900 mt-2">
-                {loading ? '—' : metrics!.totalBooks}
+                {loading || !metrics ? '—' : metrics.totalBooks}
               </h3>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {metrics && (
@@ -175,19 +183,19 @@ export const Dashboard: React.FC = () => {
                       variant="outline"
                       className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200"
                     >
-                      {metrics.booksByStatus.completed} concluídos
+                      {metrics.booksByStatus?.completed ?? 0} concluídos
                     </Badge>
                     <Badge
                       variant="outline"
                       className="text-[10px] bg-amber-50 text-amber-700 border-amber-200"
                     >
-                      {metrics.booksByStatus.pending_review} pendentes
+                      {metrics.booksByStatus?.pending_review ?? 0} pendentes
                     </Badge>
                     <Badge
                       variant="outline"
                       className="text-[10px] bg-blue-50 text-blue-700 border-blue-200"
                     >
-                      {metrics.booksByStatus.reviewed} em análise
+                      {metrics.booksByStatus?.reviewed ?? 0} em análise
                     </Badge>
                   </>
                 )}
@@ -207,7 +215,7 @@ export const Dashboard: React.FC = () => {
                 Rupturas Ativas
               </p>
               <h3 className="text-3xl font-bold text-slate-900 mt-2">
-                {loading ? '—' : metrics!.activeRuptures}
+                {loading || !metrics ? '—' : metrics.activeRuptures}
               </h3>
               <p className="text-[11px] text-slate-400 mt-1">SKUs em ruptura &lt; 15 dias</p>
             </div>
@@ -225,7 +233,7 @@ export const Dashboard: React.FC = () => {
                 Lojas Não Auditadas
               </p>
               <h3 className="text-3xl font-bold text-slate-900 mt-2">
-                {loading ? '—' : metrics!.unauditedStores}
+                {loading || !metrics ? '—' : metrics.unauditedStores}
               </h3>
               <p className="text-[11px] text-slate-400 mt-1">Ocorrências "Sem Foto — Loja"</p>
             </div>
