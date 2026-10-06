@@ -1,219 +1,161 @@
-// Testa a conexão com a API da TradePRO.
-// Pode receber base_url e api_key no corpo da requisição ou ler do registro da integração existente.
-// NUNCA cria novo registro na coleção `integrations` (evita conflito com idx_integrations_provider).
-// Se o registro existente 'tradepro' existir, atualiza seu status de forma tolerante a falhas.
-// Identifica adequadamente os tipos de resposta:
-// (a) Falha de rede / DNS
-// (b) Resposta HTTP recebida, mas formato não é JSON da API (ex.: página HTML de documentação)
-// (c) Erro de autenticação (HTTP 401 / 403)
-// (d) Sucesso da API (HTTP 2xx com JSON)
+// Testa a conexão com a API TradePRO usando as credenciais cadastradas na
+// collection `integrations` (provider = 'tradepro').
+// Autenticação: Basic Auth ("usuario:senha" salvo no campo api_key), conforme
+// o apidocs oficial (diretoria.tradepro.com.br/servicos/swagger.json).
+// Testa um endpoint real (relatorio-visitas) e tenta os dois hosts conhecidos.
 routerAdd(
   'POST',
   '/backend/v1/tradepro/test',
   (e) => {
-    // Apenas administradores podem testar a integração
     if (!e.auth || e.auth.getString('role') !== 'administrator') {
       return e.forbiddenError('Apenas administradores podem testar a integração.')
     }
 
-    const reqBody = e.requestInfo().body || {}
-    let baseUrl = typeof reqBody.base_url === 'string' ? reqBody.base_url.trim() : ''
-    let apiKey = typeof reqBody.api_key === 'string' ? reqBody.api_key.trim() : ''
-
-    // Busca o registro existente da integração TradePRO no banco (se houver)
-    let integ = null
+    let integ
     try {
       integ = $app.findFirstRecordByFilter('integrations', "provider = 'tradepro'")
+    } catch (_) {
+      return e.json(200, {
+        ok: false,
+        message: 'Integração TradePRO não encontrada no banco.',
+        details: 'Abra a página Integrações e salve as credenciais primeiro.',
+      })
+    }
+
+    const baseUrl = (integ.getString('base_url') || '').trim().replace(/\/+$/, '')
+    const cred = (integ.getString('api_key') || '').trim()
+
+    if (!baseUrl || !cred) {
+      return e.json(200, {
+        ok: false,
+        message: 'URL base ou credencial vazias.',
+        details:
+          'Preencha a URL base e a credencial (usuario:senha) na página Integrações e salve antes de testar.',
+      })
+    }
+
+    // Codificador Base64 (btoa com fallback puro-JS)
+    const b64enc = (input) => {
+      try {
+        return btoa(input)
+      } catch (_) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+        let out = ''
+        for (let i = 0; i < input.length; i += 3) {
+          const b1 = input.charCodeAt(i)
+          const b2 = i + 1 < input.length ? input.charCodeAt(i + 1) : 0
+          const b3 = i + 2 < input.length ? input.charCodeAt(i + 2) : 0
+          out += chars[b1 >> 2] + chars[((b1 & 3) << 4) | (b2 >> 4)]
+          out += i + 1 < input.length ? chars[((b2 & 15) << 2) | (b3 >> 6)] : '='
+          out += i + 2 < input.length ? chars[b3 & 63] : '='
+        }
+        return out
+      }
+    }
+
+    // Basic Auth se a credencial é "usuario:senha"; senão, Bearer (fallback)
+    const hasColon = cred.indexOf(':') >= 0
+    const authHeader = hasColon ? 'Basic ' + b64enc(cred) : 'Bearer ' + cred
+
+    // Datas AAAAMMDD (formato oficial TradePRO): ontem até hoje
+    const pad2 = (n) => (n < 10 ? '0' + n : '' + n)
+    const now = new Date()
+    const yest = new Date(now.getTime() - 86400000)
+    const dIni = '' + yest.getFullYear() + pad2(yest.getMonth() + 1) + pad2(yest.getDate())
+    const dFim = '' + now.getFullYear() + pad2(now.getMonth() + 1) + pad2(now.getDate())
+    const testPath = '/v1/relatorio-visitas/' + dIni + '/' + dFim
+
+    // Hosts candidatos: o configurado + o host alternativo conhecido da TradePRO
+    const candidates = [baseUrl]
+    if (baseUrl.indexOf('cliente.tradepro.com.br') >= 0) {
+      candidates.push(baseUrl.replace('cliente.tradepro.com.br', 'diretoria.tradepro.com.br'))
+    } else if (baseUrl.indexOf('diretoria.tradepro.com.br') >= 0) {
+      candidates.push(baseUrl.replace('diretoria.tradepro.com.br', 'cliente.tradepro.com.br'))
+    }
+
+    let lastStatus = 0
+    let lastBody = ''
+    let lastErr = ''
+    let tried = []
+
+    for (let i = 0; i < candidates.length; i++) {
+      const url = candidates[i] + testPath
+      tried.push(url)
+      let res
+      try {
+        res = $http.send({
+          url: url,
+          method: 'GET',
+          headers: { Authorization: authHeader, Accept: 'application/json' },
+          timeout: 20,
+        })
+      } catch (err) {
+        lastErr = String(err)
+        $app.logger().error('tradepro test: transport failure', 'url', url, 'error', String(err))
+        continue
+      }
+
+      lastStatus = res.statusCode
+      let sample = ''
+      try {
+        if (res.json !== undefined && res.json !== null)
+          sample = JSON.stringify(res.json).slice(0, 400)
+        else sample = new TextDecoder().decode(res.body).slice(0, 400)
+      } catch (_) {}
+      lastBody = sample
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        // Sucesso: garante base_url correta no registro e marca conectado
+        try {
+          integ.set('base_url', candidates[i])
+          integ.set('status', 'conectado')
+          $app.save(integ)
+        } catch (_) {}
+        $app.logger().info('tradepro test ok', 'url', url, 'status', res.statusCode)
+        return e.json(200, {
+          ok: true,
+          status: res.statusCode,
+          url: url,
+          message: 'Conexão estabelecida! A API TradePRO respondeu com dados.',
+          details: 'URL validada: ' + url + (sample ? ' · Resposta: ' + sample : ''),
+        })
+      }
+
+      // 401 = credencial recusada; não adianta testar outro host com a mesma credencial...
+      // mas testamos mesmo assim (pode ser host errado + credencial certa em outro).
+      if (res.statusCode === 401) {
+        $app.logger().warn('tradepro test: 401', 'url', url)
+      }
+    }
+
+    // Nenhum candidato funcionou
+    try {
+      integ.set('status', 'erro')
+      $app.save(integ)
     } catch (_) {}
 
-    // Se baseUrl ou apiKey não vieram no body da requisição, usa os valores persistidos
-    if (!baseUrl && integ) {
-      baseUrl = (integ.getString('base_url') || '').trim()
-    }
-    if (!apiKey && integ) {
-      apiKey = (integ.getString('api_key') || '').trim()
-    }
-
-    if (!baseUrl || !apiKey) {
-      return e.json(200, {
-        ok: false,
-        category: 'missing_credentials',
-        message: 'URL Base da API ou Chave de API não informadas.',
-        details: 'Preencha a URL Base e a Chave de API antes de testar a conexão.',
-      })
-    }
-
-    // Caminho opcional de teste (ex: /status, /ping, ou vindo do config_json)
-    let testPath = ''
-    if (typeof reqBody.test_path === 'string' && reqBody.test_path.trim()) {
-      testPath = reqBody.test_path.trim()
-    } else if (integ) {
-      try {
-        const cfg = JSON.parse(integ.getString('config_json') || '{}')
-        if (cfg && typeof cfg.test_path === 'string') {
-          testPath = cfg.test_path.trim()
-        }
-      } catch (_) {}
+    let message = 'A API TradePRO recusou a chamada.'
+    let hint = ''
+    if (lastStatus === 401) {
+      message = 'Autenticação recusada (HTTP 401).'
+      hint =
+        'A credencial deve estar no formato usuario:senha (as mesmas do login do sistema TradePRO). Confira também se o acesso à API está liberado para esse usuário.'
+    } else if (lastStatus === 404 || lastStatus === 405) {
+      message =
+        'Servidor respondeu, mas o endpoint de teste não foi encontrado (HTTP ' + lastStatus + ').'
+      hint =
+        'A URL base provavelmente está errada. Tente: https://cliente.tradepro.com.br/servicos ou https://diretoria.tradepro.com.br/servicos'
+    } else if (lastErr) {
+      message = 'Falha de rede ao contatar a API TradePRO.'
+      hint = 'URLs testadas: ' + tried.join(' | ') + ' · Erro: ' + lastErr
     }
 
-    const url =
-      baseUrl.replace(/\/+$/, '') +
-      (testPath ? (testPath.startsWith('/') ? testPath : '/' + testPath) : '')
-
-    let res
-    try {
-      res = $http.send({
-        url: url,
-        method: 'GET',
-        headers: {
-          Authorization: 'Bearer ' + apiKey,
-          Accept: 'application/json, text/plain, */*',
-        },
-        timeout: 15,
-      })
-    } catch (err) {
-      // Atualização resiliente do status da integração existente
-      if (integ) {
-        try {
-          integ.set('status', 'erro')
-          $app.save(integ)
-        } catch (_) {}
-      }
-      $app.logger().error('tradepro test: transport failure', 'url', url, 'error', String(err))
-
-      return e.json(200, {
-        ok: false,
-        category: 'network_error',
-        message: 'Falha de rede ao conectar com a TradePRO.',
-        details:
-          'Não foi possível estabelecer contato com o servidor (' +
-          url +
-          '). Verifique se o endereço está correto e se o servidor está acessível na internet. Erro: ' +
-          String(err),
-      })
-    }
-
-    const statusCode = res.statusCode || 0
-    const contentTypeHeader =
-      (res.headers && (res.headers['Content-Type'] || res.headers['content-type'])) || ''
-    const contentType = Array.isArray(contentTypeHeader)
-      ? contentTypeHeader.join('; ')
-      : String(contentTypeHeader)
-
-    // Extrai amostra textual do corpo da resposta
-    let rawBody = ''
-    let isJson = false
-    try {
-      if (res.json !== undefined && res.json !== null) {
-        rawBody = JSON.stringify(res.json)
-        isJson = true
-      } else if (res.body) {
-        rawBody = new TextDecoder().decode(res.body)
-        try {
-          JSON.parse(rawBody)
-          isJson = true
-        } catch (_) {
-          isJson = false
-        }
-      }
-    } catch (_) {}
-
-    const sample = rawBody.slice(0, 300)
-    const isHtml =
-      contentType.toLowerCase().indexOf('text/html') !== -1 ||
-      rawBody.trim().toLowerCase().startsWith('<!doctype html') ||
-      rawBody.trim().toLowerCase().startsWith('<html')
-
-    // Análise da resposta conforme as especificações:
-    // (a) Erro de Autenticação (401 / 403)
-    if (statusCode === 401 || statusCode === 403) {
-      if (integ) {
-        try {
-          integ.set('status', 'erro')
-          $app.save(integ)
-        } catch (_) {}
-      }
-      $app.logger().warn('tradepro test: auth error', 'url', url, 'status', statusCode)
-      return e.json(200, {
-        ok: false,
-        status: statusCode,
-        category: 'auth_error',
-        message: 'Erro de autenticação na TradePRO (HTTP ' + statusCode + ').',
-        details:
-          'A chave de API ou token informado foi recusado pelo servidor da TradePRO. Verifique se o token é válido ou consulte o suporte TradePRO sobre o esquema de autenticação (Bearer ou X-API-Key).',
-      })
-    }
-
-    // (b) Retorno que não é uma API JSON (ex.: HTML de página ou apidocs)
-    if (isHtml || (!isJson && contentType.toLowerCase().indexOf('json') === -1)) {
-      if (integ) {
-        try {
-          integ.set('status', 'erro')
-          $app.save(integ)
-        } catch (_) {}
-      }
-      $app
-        .logger()
-        .info(
-          'tradepro test: non-api response',
-          'url',
-          url,
-          'contentType',
-          contentType,
-          'status',
-          statusCode,
-        )
-      return e.json(200, {
-        ok: false,
-        status: statusCode,
-        category: 'html_response',
-        message:
-          'Conexão estabelecida, mas o endereço não respondeu como uma API (recebido HTML/página web).',
-        details:
-          'A URL informada (' +
-          url +
-          ') parece ser uma página web ou documentação técnica (Swagger/Apidocs), e não o endpoint REST da API da TradePRO. Verifique a URL do endpoint da API com a equipe técnica da TradePRO.',
-      })
-    }
-
-    // (c) HTTP 2xx com API JSON válida
-    const isSuccess = statusCode >= 200 && statusCode < 300
-    if (integ) {
-      try {
-        integ.set('status', isSuccess ? 'conectado' : 'erro')
-        $app.save(integ)
-      } catch (_) {}
-    }
-
-    $app
-      .logger()
-      .info('tradepro test: completed', 'url', url, 'status', statusCode, 'ok', isSuccess)
-
-    if (isSuccess) {
-      return e.json(200, {
-        ok: true,
-        status: statusCode,
-        category: 'success',
-        message: 'Conexão bem-sucedida! A API TradePRO respondeu normalmente.',
-        details:
-          'Resposta recebida em formato JSON (HTTP ' +
-          statusCode +
-          ').' +
-          (sample ? ' Amostra: ' + sample : ''),
-      })
-    }
-
-    // (d) Outros códigos de erro HTTP (ex: 404, 500)
+    $app.logger().warn('tradepro test failed', 'status', lastStatus, 'tried', tried.join(' | '))
     return e.json(200, {
       ok: false,
-      status: statusCode,
-      category: 'http_error',
-      message: 'A API TradePRO respondeu com erro (HTTP ' + statusCode + ').',
-      details:
-        'O servidor TradePRO foi localizado, mas o recurso retornou código ' +
-        statusCode +
-        '.' +
-        (sample ? ' Detalhes: ' + sample : ''),
+      status: lastStatus,
+      message: message,
+      details: hint + (lastBody ? ' · Resposta: ' + lastBody : ''),
     })
   },
   $apis.requireAuth(),

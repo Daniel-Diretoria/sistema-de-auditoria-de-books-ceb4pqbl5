@@ -380,7 +380,7 @@ export const Integracoes: React.FC = () => {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-medium text-slate-700">
-                      Chave de API / Token de Autenticação
+                      Credencial (usuario:senha — Basic Auth)
                     </Label>
                     {apiKey && (
                       <span className="text-[11px] text-slate-400 font-mono">
@@ -391,7 +391,7 @@ export const Integracoes: React.FC = () => {
                   <div className="relative">
                     <Input
                       type={showApiKey ? 'text' : 'password'}
-                      placeholder="Ex: tp_live_sec_993882747183929..."
+                      placeholder="usuario:senha (Basic Auth) — as mesmas do login TradePRO"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       className="bg-white pr-10 font-mono text-xs"
