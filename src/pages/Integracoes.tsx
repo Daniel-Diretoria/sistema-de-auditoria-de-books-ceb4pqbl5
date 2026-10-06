@@ -154,10 +154,9 @@ export const Integracoes: React.FC = () => {
       setTimeout(() => {
         setTestResult({
           success: false,
-          message:
-            'A TradePRO não oferece API pública — a integração direta é contratada junto ao time comercial da plataforma.',
+          message: 'Preencha a URL base e a credencial (usuario:senha) para testar.',
           details:
-            'Cadastre a URL e o Token fornecidos pelo suporte TradePRO quando contratados, ou utilize o importador de planilhas Excel/CSV abaixo para processar os dados imediatamente.',
+            'A credencial é o mesmo usuário e senha do login TradePRO, no formato usuario:senha. URL base: https://diretoria.tradepro.com.br/servicos',
         })
         setTesting(false)
       }, 700)
@@ -510,8 +509,8 @@ export const Integracoes: React.FC = () => {
             </CardHeader>
             <CardContent className="p-5 pt-0 space-y-4">
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                A TradePRO não disponibiliza documentação aberta de API para autosserviço. Para
-                conectar via sistema:
+                A API TradePRO usa autenticação <strong>Basic Auth</strong> (usuario:senha). Para
+                conectar:
               </p>
 
               <ol className="space-y-3 text-xs text-slate-700 dark:text-slate-300">
@@ -534,10 +533,11 @@ export const Integracoes: React.FC = () => {
                   </span>
                   <div>
                     <strong className="block text-slate-900 dark:text-white">
-                      Obtenha a URL e a Chave
+                      Use usuario:senha do login
                     </strong>
-                    O suporte TradePRO enviará os dados de acesso seguro (Token Bearer / API Key) e
-                    o endereço de base da sua instância.
+                    A credencial é o mesmo usuário e senha do login TradePRO, no formato
+                    &quot;usuario:senha&quot;. URL base sugerida:
+                    https://diretoria.tradepro.com.br/servicos
                   </div>
                 </li>
 
