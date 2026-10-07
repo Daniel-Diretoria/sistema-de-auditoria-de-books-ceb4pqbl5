@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T19:37:02.447Z",
+  "generatedAt": "2026-10-07T18:17:53.500Z",
   "collections": [
     {
       "name": "users",
@@ -29,21 +29,31 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "role",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["administrator", "analista_books", "supervisor", "gestor"]
+          "selectValues": [
+            "administrator",
+            "analista_books",
+            "supervisor",
+            "gestor"
+          ]
         },
         {
           "name": "active",
@@ -97,24 +107,37 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["Sul", "Sudeste", "Centro-Oeste", "Nordeste", "Norte"]
+          "selectValues": [
+            "Sul",
+            "Sudeste",
+            "Centro-Oeste",
+            "Nordeste",
+            "Norte"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_stores_number ON stores (number)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_stores_number ON stores (number)"
+      ]
     },
     {
       "name": "brands",
@@ -144,7 +167,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["diaria", "seg_qua_sex", "ter_qui_sab", "seg_qua_sex_sab"]
+          "selectValues": [
+            "diaria",
+            "seg_qua_sex",
+            "ter_qui_sab",
+            "seg_qua_sex_sab"
+          ]
         },
         {
           "name": "stores",
@@ -172,17 +200,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_brands_name ON brands (name)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_brands_name ON brands (name)"
+      ]
     },
     {
       "name": "skus",
@@ -267,17 +302,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_skus_brand_code ON skus (brand, code)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_skus_brand_code ON skus (brand, code)"
+      ]
     },
     {
       "name": "promoters",
@@ -321,14 +363,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": []
@@ -386,17 +433,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_audit_rules_brand ON audit_rules (brand)"]
+      "indexes": [
+        "CREATE INDEX idx_audit_rules_brand ON audit_rules (brand)"
+      ]
     },
     {
       "name": "books",
@@ -452,7 +506,12 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["daily", "seg_qua_sex", "ter_qui_sab", "seg_qua_sex_sab"]
+          "selectValues": [
+            "daily",
+            "seg_qua_sex",
+            "ter_qui_sab",
+            "seg_qua_sex_sab"
+          ]
         },
         {
           "name": "total_slides",
@@ -489,7 +548,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["processing", "pending_review", "reviewed", "completed"]
+          "selectValues": [
+            "processing",
+            "pending_review",
+            "reviewed",
+            "completed"
+          ]
         },
         {
           "name": "missing_store_ids",
@@ -502,21 +566,30 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "analysis_status",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["pending", "processing", "completed"]
+          "selectValues": [
+            "pending",
+            "processing",
+            "completed"
+          ]
         },
         {
           "name": "analysis_summary",
@@ -610,7 +683,11 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["pending", "approved", "corrected"]
+          "selectValues": [
+            "pending",
+            "approved",
+            "corrected"
+          ]
         },
         {
           "name": "reviewed_by",
@@ -637,14 +714,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -696,7 +778,11 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["total", "parcial", "zerado"]
+          "selectValues": [
+            "total",
+            "parcial",
+            "zerado"
+          ]
         },
         {
           "name": "days_in_rupture",
@@ -709,14 +795,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -777,7 +868,11 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["alta", "media", "baixa"]
+          "selectValues": [
+            "alta",
+            "media",
+            "baixa"
+          ]
         },
         {
           "name": "similarity",
@@ -816,14 +911,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "price_checked",
@@ -911,14 +1011,21 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["producao", "homologacao"]
+          "selectValues": [
+            "producao",
+            "homologacao"
+          ]
         },
         {
           "name": "status",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["conectado", "nao_conectado", "erro"]
+          "selectValues": [
+            "conectado",
+            "nao_conectado",
+            "erro"
+          ]
         },
         {
           "name": "config_json",
@@ -931,17 +1038,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_integrations_provider ON integrations (provider)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_integrations_provider ON integrations (provider)"
+      ]
     }
   ]
 }

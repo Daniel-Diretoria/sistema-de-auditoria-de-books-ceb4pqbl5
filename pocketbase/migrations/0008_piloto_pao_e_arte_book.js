@@ -99,7 +99,7 @@ migrate(
     rec.set('file_name', 'piloto_pao_e_arte_20261007')
     rec.set('file_size', fotos.length * 300000)
     rec.set('audit_date', '2026-10-07')
-    rec.set('audit_frequency', 'diaria')
+    rec.set('audit_frequency', 'daily')
     rec.set('total_slides', fotos.length)
     rec.set('total_photos', fotos.length)
     rec.set('identified_stores', fotos.length)
