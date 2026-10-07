@@ -261,7 +261,9 @@ export const ImportPrecos: React.FC = () => {
       // recarrega existentes
       try {
         setExisting(await getPriceTables(`brand = "${selectedBrandId}"`))
-      } catch {}
+      } catch {
+        // não bloqueia o resultado exibido
+      }
     } catch (err: any) {
       toast({ title: 'Erro durante importação', description: err.message, variant: 'destructive' })
     } finally {
