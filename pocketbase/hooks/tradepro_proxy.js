@@ -62,28 +62,42 @@ routerAdd(
     const url = baseUrl.replace(/\/+$/, '') + (path.startsWith('/') ? path : '/' + path) + qs
 
     const headers = { Accept: 'application/json' }
-    if (apiKey.indexOf(':') >= 0) {
-      // Basic Auth (padrão TradePRO): "usuario:senha" → Base64
-      const b64enc = (input) => {
-        try {
-          return btoa(input)
-        } catch (_) {
-          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-          let out = ''
-          for (let i = 0; i < input.length; i += 3) {
-            const b1 = input.charCodeAt(i)
-            const b2 = i + 1 < input.length ? input.charCodeAt(i + 1) : 0
-            const b3 = i + 2 < input.length ? input.charCodeAt(i + 2) : 0
-            out += chars[b1 >> 2] + chars[((b1 & 3) << 4) | (b2 >> 4)]
-            out += i + 1 < input.length ? chars[((b2 & 15) << 2) | (b3 >> 6)] : '='
-            out += i + 2 < input.length ? chars[b3 & 63] : '='
-          }
-          return out
+
+    // Esquema de autenticação salvo pelo teste de conexão (config_json.auth_scheme).
+    // Padrões: token puro → Basic Base64(token); usuario:senha → Basic Base64(cred).
+    const b64enc = (input) => {
+      try {
+        return btoa(input)
+      } catch (_) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+        let out = ''
+        for (let i = 0; i < input.length; i += 3) {
+          const b1 = input.charCodeAt(i)
+          const b2 = i + 1 < input.length ? input.charCodeAt(i + 1) : 0
+          const b3 = i + 2 < input.length ? input.charCodeAt(i + 2) : 0
+          out += chars[b1 >> 2] + chars[((b1 & 3) << 4) | (b2 >> 4)]
+          out += i + 1 < input.length ? chars[((b2 & 15) << 2) | (b3 >> 6)] : '='
+          out += i + 2 < input.length ? chars[b3 & 63] : '='
         }
+        return out
       }
-      headers['Authorization'] = 'Basic ' + b64enc(apiKey)
-    } else {
+    }
+
+    let scheme = ''
+    try {
+      const cfg = JSON.parse(integ.getString('config_json') || '{}') || {}
+      if (typeof cfg.auth_scheme === 'string') scheme = cfg.auth_scheme
+    } catch (_) {}
+
+    if (scheme === 'bearer') {
       headers['Authorization'] = 'Bearer ' + apiKey
+    } else if (scheme === 'raw') {
+      headers['Authorization'] = apiKey
+    } else if (scheme === 'basic_preencoded') {
+      headers['Authorization'] = 'Basic ' + apiKey
+    } else {
+      // padrão: credencial contém usuario:senha/token → Basic Base64
+      headers['Authorization'] = 'Basic ' + b64enc(apiKey)
     }
     let bodyStr = ''
     if (payload !== undefined && payload !== null && method !== 'GET') {
