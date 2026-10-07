@@ -154,7 +154,13 @@ export const DetalheBook: React.FC = () => {
     )
   }, [walletStores, reviewStoreSearch])
 
-  const photoUrl = (p: BookPhoto) => (p.image_data ? getFileUrl(p, p.image_data) : null)
+  // URL da imagem: prioriza o arquivo salvo no sistema; senão, usa a URL da
+  // TradePRO gravada no extracted_text (fotos públicas, acessíveis direto).
+  const tradeProUrl = (p: BookPhoto): string | null => {
+    const m = (p.extracted_text || '').match(/https:\/\/\S+/)
+    return m ? m[0] : null
+  }
+  const photoUrl = (p: BookPhoto) => (p.image_data ? getFileUrl(p, p.image_data) : tradeProUrl(p))
 
   const saveReview = async () => {
     if (!reviewPhoto || !id) return
