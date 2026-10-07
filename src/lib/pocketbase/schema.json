@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07T18:17:53.500Z",
+  "generatedAt": "2026-10-07T18:26:58.756Z",
   "collections": [
     {
       "name": "users",
@@ -1055,6 +1055,79 @@
       ],
       "indexes": [
         "CREATE UNIQUE INDEX idx_integrations_provider ON integrations (provider)"
+      ]
+    },
+    {
+      "name": "price_tables",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books'",
+        "update": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books'",
+        "delete": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books'"
+      },
+      "fields": [
+        {
+          "name": "brand",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "brands"
+        },
+        {
+          "name": "sku",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "skus"
+        },
+        {
+          "name": "rede",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "secao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "preco",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "vigencia",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_price_tables_key ON price_tables (brand, sku, rede, secao)"
       ]
     }
   ]

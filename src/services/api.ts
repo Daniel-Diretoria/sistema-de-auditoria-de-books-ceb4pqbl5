@@ -318,3 +318,24 @@ export async function saveIntegration(
   // Se realmente não existir nenhum registro para o provider, cria
   return await pb.collection('integrations').create<Integration>(data)
 }
+
+// ---- TABELA DE PREÇOS (price check) ----
+export async function getPriceTables(filter?: string): Promise<PriceTable[]> {
+  return await pb.collection('price_tables').getFullList<PriceTable>({
+    filter,
+    sort: 'rede,secao,sku',
+    expand: 'brand,sku',
+  })
+}
+
+export async function createPriceTable(data: Partial<PriceTable>): Promise<PriceTable> {
+  return await pb.collection('price_tables').create<PriceTable>(data)
+}
+
+export async function updatePriceTable(id: string, data: Partial<PriceTable>): Promise<PriceTable> {
+  return await pb.collection('price_tables').update<PriceTable>(id, data)
+}
+
+export async function deletePriceTable(id: string): Promise<boolean> {
+  return await pb.collection('price_tables').delete(id)
+}

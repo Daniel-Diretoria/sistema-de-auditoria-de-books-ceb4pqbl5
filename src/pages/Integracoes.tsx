@@ -282,6 +282,14 @@ export const Integracoes: React.FC = () => {
             <FileSpreadsheet className="h-4 w-4 mr-2" />
             Importador TradePRO
           </Button>
+          <Button
+            onClick={() => navigate('/integracoes/precos/import')}
+            variant="outline"
+            className="border-slate-300 text-slate-700 hover:bg-slate-50 font-medium"
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600" />
+            Tabela de Preços
+          </Button>
         </div>
       </div>
 
