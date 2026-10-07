@@ -29,18 +29,28 @@ routerAdd(
       return e.badRequestError('Método HTTP não suportado: ' + method)
     }
 
+    // A credencial EFETIVA é o token antes validado (secret TRADEPRO_TOKEN,
+    // Basic pré-codificado). A collection `integrations` guarda a chave
+    // antiga/legada que o teste real de hoje mostrou ser recusada (401) —
+    // preferimos o secret, que é o que o sync de fotos usa com sucesso.
+    const secretToken = $secrets.get('TRADEPRO_TOKEN')
+
     let integ
     try {
       integ = $app.findFirstRecordByFilter('integrations', "provider = 'tradepro'")
     } catch (_) {
-      return e.json(200, {
-        ok: false,
-        message: 'Integração TradePRO não configurada. Salve URL e chave na página Integrações.',
-      })
+      if (!secretToken) {
+        return e.json(200, {
+          ok: false,
+          message: 'Integração TradePRO não configurada. Salve URL e chave na página Integrações.',
+        })
+      }
     }
 
-    const baseUrl = (integ.getString('base_url') || '').trim()
-    const apiKey = (integ.getString('api_key') || '').trim()
+    const baseUrl = (
+      integ?.getString('base_url') || 'https://diretoria.tradepro.com.br/servicos'
+    ).trim()
+    const apiKey = secretToken || (integ?.getString('api_key') || '').trim()
     if (!baseUrl || !apiKey) {
       return e.json(200, {
         ok: false,
@@ -85,9 +95,15 @@ routerAdd(
 
     let scheme = ''
     try {
-      const cfg = JSON.parse(integ.getString('config_json') || '{}') || {}
+      const cfg = JSON.parse(integ?.getString('config_json') || '{}') || {}
       if (typeof cfg.auth_scheme === 'string') scheme = cfg.auth_scheme
     } catch (_) {}
+
+    // O token do secret (TRADEPRO_TOKEN) é Basic PRÉ-codificado em Base64 —
+    // vem direto do campo Authorization do TradePRO. Nunca re-encode.
+    if (secretToken) {
+      scheme = 'basic_preencoded'
+    }
 
     if (scheme === 'bearer') {
       headers['Authorization'] = 'Bearer ' + apiKey
