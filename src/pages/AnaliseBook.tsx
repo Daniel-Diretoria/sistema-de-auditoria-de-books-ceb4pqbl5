@@ -72,11 +72,15 @@ import {
 
 const CATEGORIES: SkuCategory[] = [
   'presente_pdv',
-  'ruptura_justificada',
-  'ausente_cobrar',
-  'validar_ruptura_antiga',
+  'nao_identificado',
+  'evidencia_insuficiente',
   'sem_foto_secao',
   'sem_foto_loja',
+  'nao_verificado',
+  'falha_tecnica',
+  'ruptura_justificada',
+  'validar_ruptura_antiga',
+  'ausente_cobrar',
 ]
 
 const CATEGORY_ICONS: Record<SkuCategory, React.ReactNode> = {
@@ -620,10 +624,41 @@ export const AnaliseBook: React.FC = () => {
                           {store ? `${store.number} — ${store.name}` : '—'}
                         </td>
                         <td className="px-3 py-2">
-                          <span className="font-medium text-slate-900">{sku?.name || '—'}</span>
-                          <span className="text-[10px] text-slate-400 font-mono ml-2">
-                            {sku?.code || ''}
-                          </span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-slate-900">{sku?.name || '—'}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {sku?.code || ''}
+                            </span>
+                            {c.assortment_status === 'nao_trabalhado' && (
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] bg-slate-100 text-slate-600"
+                              >
+                                Não Trabalhado
+                              </Badge>
+                            )}
+                            {c.discrepancy_flag && (
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] bg-red-100 text-red-800 border-red-300"
+                              >
+                                Discrepância Visível vs Ruptura
+                              </Badge>
+                            )}
+                            {c.is_inferred_link && (
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] bg-amber-50 text-amber-700 border-amber-200"
+                              >
+                                Vínculo Inferido
+                              </Badge>
+                            )}
+                          </div>
+                          {c.reason_text && (
+                            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1 italic">
+                              Motivo: {c.reason_text}
+                            </p>
+                          )}
                         </td>
                         <td className="px-3 py-2">
                           <Badge
@@ -847,8 +882,49 @@ const ReviewDrawerContent: React.FC<{
           )}
         </div>
 
+        {/* Dimensões da Auditoria e Evidência */}
+        <div className="rounded-lg bg-slate-50 p-3 border border-slate-200 space-y-2 text-xs">
+          <p className="font-semibold text-slate-700">Dimensões da Auditoria</p>
+          <div className="grid grid-cols-2 gap-2 text-slate-600">
+            <div>
+              <span className="text-slate-400">Presença: </span>
+              <span className="font-medium">{item.presence_dimension || 'Não avaliada'}</span>
+            </div>
+            <div>
+              <span className="text-slate-400">Cobertura: </span>
+              <span className="font-medium">{item.coverage_dimension || 'Padrão'}</span>
+            </div>
+            <div>
+              <span className="text-slate-400">Ruptura: </span>
+              <span className="font-medium">{item.rupture_dimension || 'Nenhuma'}</span>
+            </div>
+            <div>
+              <span className="text-slate-400">Agenda Visita: </span>
+              <span className="font-medium">{item.visit_dimension || 'Não vinculada'}</span>
+            </div>
+          </div>
+          {item.reason_text && (
+            <div className="pt-1 border-t border-slate-200 text-slate-700">
+              <span className="font-semibold">Motivo registrado: </span>
+              <span>{item.reason_text}</span>
+            </div>
+          )}
+          {item.evidence_photo_url && (
+            <div className="pt-1 text-indigo-600">
+              <a
+                href={item.evidence_photo_url}
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-indigo-800"
+              >
+                Ver foto da evidência visual
+              </a>
+            </div>
+          )}
+        </div>
+
         <div className="space-y-1.5">
-          <Label htmlFor="rev-notes">Notas do analista</Label>
+          <Label htmlFor="rev-notes">Notas do analista / Justificativa</Label>
           <textarea
             id="rev-notes"
             value={notes}

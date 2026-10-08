@@ -11,6 +11,7 @@ import {
   SkuClassification,
   RuptureReport,
   Integration,
+  PriceTable,
 } from '@/types'
 
 // Helper for file URLs
@@ -241,11 +242,60 @@ export async function getSkuClassifications(bookId: string): Promise<SkuClassifi
 
 export async function updateSkuClassification(
   id: string,
-  data: FormData | Partial<SkuClassification>,
+  data: Partial<SkuClassification>,
 ): Promise<SkuClassification> {
   return await pb.collection('sku_classifications').update<SkuClassification>(id, data)
 }
 
+// ---- MATRIZ DE SORTIMENTO ----
+export async function getAssortmentMatrix(filter?: string): Promise<any[]> {
+  return await pb.collection('assortment_matrix').getFullList({
+    filter: filter || '',
+    sort: '-created',
+    expand: 'brand,sku,store',
+  })
+}
+
+export async function createAssortmentItem(data: any): Promise<any> {
+  return await pb.collection('assortment_matrix').create(data, {
+    expand: 'brand,sku,store',
+  })
+}
+
+export async function updateAssortmentItem(id: string, data: any): Promise<any> {
+  return await pb.collection('assortment_matrix').update(id, data, {
+    expand: 'brand,sku,store',
+  })
+}
+
+export async function deleteAssortmentItem(id: string): Promise<boolean> {
+  return await pb.collection('assortment_matrix').delete(id)
+}
+
+// ---- AGENDA DE VISITAS ----
+export async function getVisitSchedules(filter?: string): Promise<any[]> {
+  return await pb.collection('visit_schedules').getFullList({
+    filter: filter || '',
+    sort: '-visit_date',
+    expand: 'store,promoter,brand',
+  })
+}
+
+export async function createVisitSchedule(data: any): Promise<any> {
+  return await pb.collection('visit_schedules').create(data, {
+    expand: 'store,promoter,brand',
+  })
+}
+
+export async function updateVisitSchedule(id: string, data: any): Promise<any> {
+  return await pb.collection('visit_schedules').update(id, data, {
+    expand: 'store,promoter,brand',
+  })
+}
+
+export async function deleteVisitSchedule(id: string): Promise<boolean> {
+  return await pb.collection('visit_schedules').delete(id)
+}
 // RUPTURE REPORTS
 export async function getRuptureReports(filter?: string): Promise<RuptureReport[]> {
   return await pb.collection('rupture_reports').getFullList<RuptureReport>({

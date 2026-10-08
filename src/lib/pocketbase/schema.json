@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07T18:56:26.182Z",
+  "generatedAt": "2026-10-08T23:41:48.488Z",
   "collections": [
     {
       "name": "users",
@@ -112,6 +112,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "api_identifier",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_stores_number ON stores (number)"]
@@ -645,6 +651,24 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "is_inferred",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ambiguous_match",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "inferred_notes",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -681,7 +705,7 @@
         {
           "name": "sku",
           "type": "relation",
-          "required": true,
+          "required": false,
           "system": false,
           "collectionRef": "skus"
         },
@@ -717,6 +741,43 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "scope",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["sku", "brand_family"]
+        },
+        {
+          "name": "brand_level_declared",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "requires_clarification",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "clarification_reason",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_inferred",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "inference_notes",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -765,11 +826,15 @@
           "system": false,
           "selectValues": [
             "presente_pdv",
-            "ruptura_justificada",
-            "ausente_cobrar",
-            "validar_ruptura_antiga",
+            "nao_identificado",
+            "evidencia_insuficiente",
             "sem_foto_secao",
-            "sem_foto_loja"
+            "sem_foto_loja",
+            "nao_verificado",
+            "falha_tecnica",
+            "ruptura_justificada",
+            "validar_ruptura_antiga",
+            "ausente_cobrar"
           ]
         },
         {
@@ -860,6 +925,96 @@
           "type": "bool",
           "required": false,
           "system": false
+        },
+        {
+          "name": "reason_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "evidence_photo_url",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "presence_dimension",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "presente_com_evidencia",
+            "nao_identificado",
+            "evidencia_insuficiente",
+            "nao_verificado",
+            "ausente_confirmado"
+          ]
+        },
+        {
+          "name": "coverage_dimension",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["cobertura_completa", "secao_parcial", "sem_foto_secao", "sem_foto_loja"]
+        },
+        {
+          "name": "price_dimension",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["conforme", "divergente", "sem_etiqueta", "sem_splash", "nao_verificado"]
+        },
+        {
+          "name": "rupture_dimension",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "sem_ruptura",
+            "ruptura_justificada",
+            "ruptura_declarada_marca",
+            "validar_antiga",
+            "discrepancia_visivel_vs_declarada"
+          ]
+        },
+        {
+          "name": "visit_dimension",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "visita_confirmada_evidencias",
+            "visita_confirmada_fotos_pendentes",
+            "visita_agendada_nao_confirmada",
+            "sem_visita_agendada",
+            "agenda_desconhecida"
+          ]
+        },
+        {
+          "name": "is_inferred_link",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "inferred_link_notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "discrepancy_flag",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "assortment_status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["obrigatorio", "opcional", "nao_trabalhado", "aguardando_confirmacao"]
         }
       ],
       "indexes": [
@@ -1009,6 +1164,222 @@
       ],
       "indexes": [
         "CREATE UNIQUE INDEX idx_price_tables_key ON price_tables (brand, sku, rede, secao)"
+      ]
+    },
+    {
+      "name": "assortment_matrix",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books' || @request.auth.role = 'gestor'",
+        "update": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books' || @request.auth.role = 'gestor'",
+        "delete": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books' || @request.auth.role = 'gestor'"
+      },
+      "fields": [
+        {
+          "name": "brand",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "brands"
+        },
+        {
+          "name": "sku",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "skus"
+        },
+        {
+          "name": "network",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "store",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "stores"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["obrigatorio", "opcional", "nao_trabalhado", "aguardando_confirmacao"]
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "min_facings",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_assortment_brand ON assortment_matrix (brand)",
+        "CREATE INDEX idx_assortment_sku ON assortment_matrix (sku)",
+        "CREATE INDEX idx_assortment_store ON assortment_matrix (store)",
+        "CREATE INDEX idx_assortment_network ON assortment_matrix (network)",
+        "CREATE INDEX idx_assortment_status ON assortment_matrix (status)"
+      ]
+    },
+    {
+      "name": "visit_schedules",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books' || @request.auth.role = 'supervisor'",
+        "update": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books' || @request.auth.role = 'supervisor'",
+        "delete": "@request.auth.role = 'administrator' || @request.auth.role = 'analista_books' || @request.auth.role = 'supervisor'"
+      },
+      "fields": [
+        {
+          "name": "store",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "stores"
+        },
+        {
+          "name": "visit_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "promoter",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "promoters"
+        },
+        {
+          "name": "brand",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "brands"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "sem_visita_agendada",
+            "agenda_desconhecida",
+            "visita_agendada_nao_confirmada",
+            "visita_confirmada_fotos_pendentes",
+            "visita_confirmada_evidencias"
+          ]
+        },
+        {
+          "name": "shift",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["manha", "tarde", "integral"]
+        },
+        {
+          "name": "origin",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["manual", "import_planilha", "api_tradepro"]
+        },
+        {
+          "name": "checkin_time",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "checkout_time",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_inferred",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ambiguous_conflict",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "conflict_notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_visit_schedules_store ON visit_schedules (store)",
+        "CREATE INDEX idx_visit_schedules_date ON visit_schedules (visit_date)",
+        "CREATE INDEX idx_visit_schedules_promoter ON visit_schedules (promoter)",
+        "CREATE INDEX idx_visit_schedules_brand ON visit_schedules (brand)",
+        "CREATE INDEX idx_visit_schedules_status ON visit_schedules (status)"
       ]
     }
   ]

@@ -1,14 +1,14 @@
-// Scoring engine: computes store notes and promoter rankings from
-// sku_classifications according to the business rules.
+// Scoring engine: computa notas de loja e ranking de promotores
+// baseado nas classificações de SKU e na Matriz de Sortimento.
 //
-// Nota da Loja = (SKUs_presentes_e_conformes) / (SKUs_elegiveis) × 10
-//
-// SKUs elegíveis = total - ruptura_justificada - sem_foto_secao - sem_foto_loja
-// SKUs presentes e conformes = presente_pdv - penalidades
-//   - sem preço exposto (missing_price_tag): -1
-//   - promoção sem splash (missing_splash): -1
-//   - preço divergente (price_match === false): -0.5
-// AUSENTE_COBRAR conta no denominador mas não no numerador.
+// Regras da Etapa 1:
+// - Apenas SKUs obrigatórios e elegíveis compõem a base do cálculo.
+// - SKUs "não trabalhado" na matriz são excluídos do cálculo.
+// - "Não identificado" / "Evidência insuficiente" / "Sem foto de seção" / "Sem foto de loja"
+//   NÃO são penalizados automaticamente como ausência culposa nem punem o promotor
+//   sem verificação de agenda/cobertura.
+// - AUSENTE_COBRAR confirmado por evidência conta no denominador como ausência comprovada.
+// - Ruptura justificada é excluída do denominador.
 
 import { SkuClassification, StoreScore, PromoterScore, Store, Promoter, Brand } from '@/types'
 
@@ -23,9 +23,19 @@ export function computeStoreScore(
   let validarAntiga = 0
   let semFotoSecao = 0
   let semFotoLoja = 0
+  let naoIdentificado = 0
+  let evidenciaInsuficiente = 0
+  let naoVerificado = 0
+  let naoTrabalhado = 0
   let penalties = 0
 
   for (const c of classifications) {
+    // Se o SKU não é trabalhado na loja conforme a matriz, desconsidera
+    if (c.assortment_status === 'nao_trabalhado') {
+      naoTrabalhado++
+      continue
+    }
+
     switch (c.category) {
       case 'presente_pdv':
         present++
@@ -34,6 +44,7 @@ export function computeStoreScore(
         if (c.price_checked && c.price_match === false) penalties += 0.5
         break
       case 'ausente_cobrar':
+        // Apenas ausência comprovada conta contra o promotor
         absent++
         break
       case 'ruptura_justificada':
@@ -48,12 +59,29 @@ export function computeStoreScore(
       case 'sem_foto_loja':
         semFotoLoja++
         break
+      case 'nao_identificado':
+        naoIdentificado++
+        break
+      case 'evidencia_insuficiente':
+        evidenciaInsuficiente++
+        break
+      case 'nao_verificado':
+      case 'falha_tecnica':
+        naoVerificado++
+        break
     }
   }
 
   const total = classifications.length
-  const eligible = total - justifiedRupture - semFotoSecao - semFotoLoja
+  // Itens excluídos do denominador de elegibilidade direta:
+  // rupturas justificadas, ausências de fotos (cobertura), itens não trabalhados,
+  // e itens pendentes de identificação que ainda não foram convertidos em ausência comprovada
+  const excludedFromEligible =
+    justifiedRupture + semFotoSecao + semFotoLoja + naoTrabalhado + naoVerificado
+
+  const eligible = Math.max(0, total - excludedFromEligible)
   const presentAndConform = Math.max(0, present - penalties)
+
   const score = eligible > 0 ? Math.min(10, Math.max(0, (presentAndConform / eligible) * 10)) : 0
 
   return {
@@ -86,7 +114,7 @@ export function computeBookScores(
   for (const [storeId, items] of byStore) {
     scores.push(computeStoreScore(storeId, items, storeMap.get(storeId)))
   }
-  // sort by store number
+  // Ordena por número de loja
   scores.sort((a, b) => (a.store?.number || '').localeCompare(b.store?.number || ''))
   return scores
 }
@@ -98,8 +126,7 @@ export function bookAverageScore(storeScores: StoreScore[]): number {
 }
 
 /**
- * Compute promoter ranking by averaging the store scores of the stores
- * each promoter tends, for a given set of books.
+ * Computa ranking de promotores agregando a pontuação média das lojas atendidas.
  */
 export function computePromoterScores(
   promoters: Promoter[],

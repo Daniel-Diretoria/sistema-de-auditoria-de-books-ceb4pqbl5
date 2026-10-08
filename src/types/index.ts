@@ -39,6 +39,7 @@ export interface Store {
   address: string
   network: string
   region: Region
+  api_identifier?: string
   created: string
   updated: string
 }
@@ -200,6 +201,9 @@ export interface BookPhoto {
   reviewed_by?: string
   review_notes?: string
   corrected_store?: string
+  is_inferred?: boolean
+  ambiguous_match?: boolean
+  inferred_notes?: string
   expand?: {
     identified_store?: Store
     corrected_store?: Store
@@ -214,11 +218,15 @@ export type AnalysisStatus = 'pending' | 'processing' | 'completed'
 
 export type SkuCategory =
   | 'presente_pdv'
-  | 'ruptura_justificada'
-  | 'ausente_cobrar'
-  | 'validar_ruptura_antiga'
+  | 'nao_identificado'
+  | 'evidencia_insuficiente'
   | 'sem_foto_secao'
   | 'sem_foto_loja'
+  | 'nao_verificado'
+  | 'falha_tecnica'
+  | 'ruptura_justificada'
+  | 'validar_ruptura_antiga'
+  | 'ausente_cobrar'
 
 export type ConfidenceLevel = 'alta' | 'media' | 'baixa'
 
@@ -238,34 +246,123 @@ export const ANALYSIS_STATUS_BADGE: Record<AnalysisStatus, string> = {
 }
 
 export const SKU_CATEGORY_LABELS: Record<SkuCategory, string> = {
-  presente_pdv: 'Presente no PDV',
-  ruptura_justificada: 'Ruptura Justificada',
-  ausente_cobrar: 'Ausente — Cobrar',
-  validar_ruptura_antiga: 'Validar Ruptura Antiga',
-  sem_foto_secao: 'Sem Foto — Seção não Capturada',
+  presente_pdv: 'Presente com Evidência',
+  nao_identificado: 'Não Identificado',
+  evidencia_insuficiente: 'Evidência Insuficiente',
+  sem_foto_secao: 'Seção não Fotografada',
   sem_foto_loja: 'Sem Foto — Loja não Auditada',
+  nao_verificado: 'Não Verificado',
+  falha_tecnica: 'Falha Técnica',
+  ruptura_justificada: 'Ruptura Justificada',
+  validar_ruptura_antiga: 'Validar Ruptura Antiga',
+  ausente_cobrar: 'Ausente Comprovado — Cobrar',
 }
 
 export const SKU_CATEGORY_SHORT: Record<SkuCategory, string> = {
   presente_pdv: 'Presente',
+  nao_identificado: 'Não Identif.',
+  evidencia_insuficiente: 'Evid. Insuf.',
+  sem_foto_secao: 'Sem Foto Seção',
+  sem_foto_loja: 'Sem Foto Loja',
+  nao_verificado: 'Não Verificado',
+  falha_tecnica: 'Falha Técnica',
   ruptura_justificada: 'Ruptura Justif.',
-  ausente_cobrar: 'Ausente — Cobrar',
   validar_ruptura_antiga: 'Validar Antiga',
-  sem_foto_secao: 'Sem Foto — Seção',
-  sem_foto_loja: 'Sem Foto — Loja',
+  ausente_cobrar: 'Ausente — Cobrar',
 }
 
 export const SKU_CATEGORY_BADGE: Record<SkuCategory, string> = {
   presente_pdv:
     'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300',
-  ruptura_justificada:
+  nao_identificado: 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950 dark:text-sky-300',
+  evidencia_insuficiente:
     'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-300',
-  ausente_cobrar: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-300',
-  validar_ruptura_antiga:
-    'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950 dark:text-orange-300',
   sem_foto_secao:
     'bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300',
   sem_foto_loja: 'bg-zinc-200 text-zinc-700 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300',
+  nao_verificado:
+    'bg-neutral-100 text-neutral-700 border-neutral-300 dark:bg-neutral-800 dark:text-neutral-300',
+  falha_tecnica:
+    'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950 dark:text-purple-300',
+  ruptura_justificada:
+    'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-300',
+  validar_ruptura_antiga:
+    'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950 dark:text-orange-300',
+  ausente_cobrar: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-300',
+}
+
+// ---- AUDIT DIMENSIONS ----
+export type PresenceDimension =
+  | 'presente_com_evidencia'
+  | 'nao_identificado'
+  | 'evidencia_insuficiente'
+  | 'nao_verificado'
+  | 'ausente_confirmado'
+
+export type CoverageDimension =
+  | 'cobertura_completa'
+  | 'secao_parcial'
+  | 'sem_foto_secao'
+  | 'sem_foto_loja'
+
+export type PriceDimension =
+  | 'conforme'
+  | 'divergente'
+  | 'sem_etiqueta'
+  | 'sem_splash'
+  | 'nao_verificado'
+
+export type RuptureDimension =
+  | 'sem_ruptura'
+  | 'ruptura_justificada'
+  | 'ruptura_declarada_marca'
+  | 'validar_antiga'
+  | 'discrepancia_visivel_vs_declarada'
+
+export type VisitDimension =
+  | 'visita_confirmada_evidencias'
+  | 'visita_confirmada_fotos_pendentes'
+  | 'visita_agendada_nao_confirmada'
+  | 'sem_visita_agendada'
+  | 'agenda_desconhecida'
+
+export const PRESENCE_DIMENSION_LABELS: Record<PresenceDimension, string> = {
+  presente_com_evidencia: 'Presente com Evidência',
+  nao_identificado: 'Não Identificado',
+  evidencia_insuficiente: 'Evidência Insuficiente',
+  nao_verificado: 'Não Verificado',
+  ausente_confirmado: 'Ausência Confirmada',
+}
+
+export const COVERAGE_DIMENSION_LABELS: Record<CoverageDimension, string> = {
+  cobertura_completa: 'Cobertura Completa',
+  secao_parcial: 'Seção Parcial',
+  sem_foto_secao: 'Sem Foto da Seção',
+  sem_foto_loja: 'Sem Foto da Loja',
+}
+
+export const PRICE_DIMENSION_LABELS: Record<PriceDimension, string> = {
+  conforme: 'Preço Conforme',
+  divergente: 'Preço Divergente',
+  sem_etiqueta: 'Sem Etiqueta Exposta',
+  sem_splash: 'Sem Splash Promocional',
+  nao_verificado: 'Preço Não Verificado',
+}
+
+export const RUPTURE_DIMENSION_LABELS: Record<RuptureDimension, string> = {
+  sem_ruptura: 'Sem Ruptura Relatada',
+  ruptura_justificada: 'Ruptura Justificada',
+  ruptura_declarada_marca: 'Ruptura Declarada Marca (Não Prova Visual)',
+  validar_antiga: 'Validar Ruptura Antiga',
+  discrepancia_visivel_vs_declarada: 'Discrepância: Visível vs Declarada',
+}
+
+export const VISIT_DIMENSION_LABELS: Record<VisitDimension, string> = {
+  visita_confirmada_evidencias: 'Visita Confirmada, Evidências Recebidas',
+  visita_confirmada_fotos_pendentes: 'Visita Confirmada, Fotos Pendentes',
+  visita_agendada_nao_confirmada: 'Visita Agendada, Conclusão Não Confirmada',
+  sem_visita_agendada: 'Sem Visita Agendada',
+  agenda_desconhecida: 'Agenda Desconhecida',
 }
 
 export const CONFIDENCE_LABELS: Record<ConfidenceLevel, string> = {
@@ -286,14 +383,22 @@ export const RUPTURE_TYPE_LABELS: Record<RuptureType, string> = {
   zerado: 'Estoque Zerado',
 }
 
+export type RuptureScope = 'sku' | 'brand_family'
+
 export interface RuptureReport {
   id: string
   brand: string
   store: string
-  sku: string
+  sku?: string
   report_date: string
   rupture_type: RuptureType
   days_in_rupture?: number
+  scope?: RuptureScope
+  brand_level_declared?: boolean
+  requires_clarification?: boolean
+  clarification_reason?: string
+  is_inferred?: boolean
+  inference_notes?: string
   expand?: {
     brand?: Brand
     store?: Store
@@ -315,6 +420,18 @@ export interface SkuClassification {
   reviewer?: string
   reviewed_at?: string
   notes?: string
+  reason_text?: string
+  evidence_photo_url?: string
+  // Dimensions
+  presence_dimension?: PresenceDimension
+  coverage_dimension?: CoverageDimension
+  price_dimension?: PriceDimension
+  rupture_dimension?: RuptureDimension
+  visit_dimension?: VisitDimension
+  is_inferred_link?: boolean
+  inferred_link_notes?: string
+  discrepancy_flag?: boolean
+  assortment_status?: AssortmentStatus
   // Price verification fields
   price_checked?: boolean
   price_match?: boolean | null
@@ -328,6 +445,127 @@ export interface SkuClassification {
     sku?: SKU
     matched_photo?: BookPhoto
     reviewer?: User
+  }
+  created: string
+  updated: string
+}
+
+// ---- ASSORTMENT MATRIX ----
+export type AssortmentStatus =
+  | 'obrigatorio'
+  | 'opcional'
+  | 'nao_trabalhado'
+  | 'aguardando_confirmacao'
+
+export const ASSORTMENT_STATUS_LABELS: Record<AssortmentStatus, string> = {
+  obrigatorio: 'Obrigatório',
+  opcional: 'Opcional',
+  nao_trabalhado: 'Não Trabalhado',
+  aguardando_confirmacao: 'Aguardando Confirmação',
+}
+
+export const ASSORTMENT_STATUS_BADGE: Record<AssortmentStatus, string> = {
+  obrigatorio:
+    'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300',
+  opcional: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-300',
+  nao_trabalhado:
+    'bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300',
+  aguardando_confirmacao:
+    'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-300',
+}
+
+export interface PriceTable {
+  id: string
+  brand: string
+  sku: string
+  store?: string
+  network?: string
+  normal_price?: number
+  promo_price?: number
+  promo_start?: string
+  promo_end?: string
+  requires_splash?: boolean
+  notes?: string
+  expand?: {
+    brand?: Brand
+    sku?: SKU
+    store?: Store
+  }
+  created: string
+  updated: string
+}
+
+export interface AssortmentMatrixItem {
+  id: string
+  brand: string
+  sku: string
+  network?: string
+  store?: string
+  status: AssortmentStatus
+  start_date?: string
+  end_date?: string
+  min_facings?: number
+  notes?: string
+  expand?: {
+    brand?: Brand
+    sku?: SKU
+    store?: Store
+  }
+  created: string
+  updated: string
+}
+
+// ---- VISIT SCHEDULE ----
+export type VisitScheduleStatus =
+  | 'sem_visita_agendada'
+  | 'agenda_desconhecida'
+  | 'visita_agendada_nao_confirmada'
+  | 'visita_confirmada_fotos_pendentes'
+  | 'visita_confirmada_evidencias'
+
+export type VisitShift = 'manha' | 'tarde' | 'integral'
+export type VisitOrigin = 'manual' | 'import_planilha' | 'api_tradepro'
+
+export const VISIT_SCHEDULE_STATUS_LABELS: Record<VisitScheduleStatus, string> = {
+  sem_visita_agendada: 'Sem visita agendada',
+  agenda_desconhecida: 'Agenda desconhecida',
+  visita_agendada_nao_confirmada: 'Visita agendada, conclusão não confirmada',
+  visita_confirmada_fotos_pendentes: 'Visita confirmada, fotos pendentes',
+  visita_confirmada_evidencias: 'Visita confirmada, evidências recebidas',
+}
+
+export const VISIT_SCHEDULE_STATUS_BADGE: Record<VisitScheduleStatus, string> = {
+  sem_visita_agendada:
+    'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300',
+  agenda_desconhecida:
+    'bg-zinc-200 text-zinc-700 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300',
+  visita_agendada_nao_confirmada:
+    'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-300',
+  visita_confirmada_fotos_pendentes:
+    'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-300',
+  visita_confirmada_evidencias:
+    'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300',
+}
+
+export interface VisitSchedule {
+  id: string
+  store: string
+  visit_date: string
+  promoter?: string
+  brand?: string
+  status: VisitScheduleStatus
+  shift?: VisitShift
+  origin?: VisitOrigin
+  checkin_time?: string
+  checkout_time?: string
+  is_inferred?: boolean
+  ambiguous_conflict?: boolean
+  conflict_notes?: string
+  notes?: string
+  expand?: {
+    store?: Store
+    promoter?: Promoter
+    brand?: Brand
   }
   created: string
   updated: string

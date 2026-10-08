@@ -29,6 +29,10 @@ import { ImportRuptura } from './pages/ImportRuptura'
 import { NotasBook } from './pages/NotasBook'
 import { ExportBook } from './pages/ExportBook'
 import { Ranking } from './pages/Ranking'
+import { Sortimento } from './pages/Sortimento'
+import { ImportSortimento } from './pages/ImportSortimento'
+import { AgendaVisitas } from './pages/AgendaVisitas'
+import { ImportAgenda } from './pages/ImportAgenda'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -49,6 +53,20 @@ const App = () => (
               <Route path="/skus" element={<SKUs />} />
               <Route path="/promotores" element={<Promotores />} />
               <Route path="/regras" element={<Regras />} />
+
+              {/* Matriz de Sortimento e Agenda de Visitas */}
+              <Route
+                element={
+                  <RequireRole
+                    allowedRoles={['administrator', 'analista_books', 'supervisor', 'gestor']}
+                  />
+                }
+              >
+                <Route path="/sortimento" element={<Sortimento />} />
+                <Route path="/sortimento/import" element={<ImportSortimento />} />
+                <Route path="/agenda" element={<AgendaVisitas />} />
+                <Route path="/agenda/import" element={<ImportAgenda />} />
+              </Route>
 
               <Route element={<RequireRole allowedRoles={['administrator', 'analista_books']} />}>
                 <Route path="/books" element={<Books />} />

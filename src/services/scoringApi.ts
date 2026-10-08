@@ -38,11 +38,13 @@ export async function batchImportRuptures(
   let created = 0
   let ignored = 0
 
-  // Build lookup maps
+  // Build lookup maps (com suporte ao api_identifier oficial)
   const storeByNumber = new Map<string, Store>()
+  const storeByApiId = new Map<string, Store>()
   const storeByNameLower = new Map<string, Store>()
   for (const s of stores) {
     storeByNumber.set(s.number.trim(), s)
+    if (s.api_identifier) storeByApiId.set(s.api_identifier.trim(), s)
     storeByNameLower.set(s.name.trim().toLowerCase(), s)
   }
   const skuByCode = new Map<string, SKU>()
@@ -63,9 +65,13 @@ export async function batchImportRuptures(
       ignored++
       continue
     }
-    const store = storeByNumber.get(ref) || storeByNameLower.get(ref.toLowerCase())
+    const store =
+      storeByApiId.get(ref) || storeByNumber.get(ref) || storeByNameLower.get(ref.toLowerCase())
     if (!store) {
-      errors.push({ row: rowNum, reason: `Loja não encontrada: "${ref}"` })
+      errors.push({
+        row: rowNum,
+        reason: `Loja não encontrada pelo identificador oficial/número: "${ref}"`,
+      })
       ignored++
       continue
     }
@@ -115,6 +121,9 @@ export async function batchImportRuptures(
         report_date: row.date,
         rupture_type: ruptureType,
         days_in_rupture: daysInRupture ?? 0,
+        scope: 'sku',
+        is_inferred: true,
+        inference_notes: `Vínculo de ocorrência importado por loja (${ref}) e data (${row.date})`,
       })
       created++
     } catch (err: any) {

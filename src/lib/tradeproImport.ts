@@ -37,7 +37,13 @@ export interface TradeProColumnField {
 
 export const TRADEPRO_FIELDS_BY_TYPE: Record<TradeProExportType, TradeProColumnField[]> = {
   stores_routes: [
-    { key: 'storeNumber', label: 'Número / Código da Loja', required: true },
+    {
+      key: 'apiIdentifier',
+      label: 'Identificador Oficial TradePRO (API)',
+      required: false,
+      description: 'Código único oficial da loja na API TradePRO',
+    },
+    { key: 'storeNumber', label: 'Número Comercial da Loja', required: true },
     { key: 'storeName', label: 'Nome Fantasia da Loja', required: true },
     { key: 'network', label: 'Rede / Bandeira', required: false },
     { key: 'address', label: 'Endereço / Cidade', required: false },
@@ -184,15 +190,25 @@ export function autoMapTradeProHeaders(
   for (const field of fields) {
     const matchIndex = lowerHeaders.findIndex((h) => {
       switch (field.key) {
+        case 'apiIdentifier':
+          return (
+            h.includes('id tradepro') ||
+            h.includes('id api') ||
+            h.includes('codigo oficial') ||
+            h.includes('id pdv tradepro') ||
+            h === 'id pdv' ||
+            h === 'id_pdv'
+          )
         case 'storeNumber':
           return (
             h === 'numero' ||
+            h === 'numero loja' ||
+            h === 'num loja' ||
             h === 'codigo pdv' ||
             h === 'cod pdv' ||
             h === 'cod loja' ||
             h === 'codigo loja' ||
-            h.includes('codigo') ||
-            h.includes('id pdv')
+            h.includes('codigo')
           )
         case 'storeName':
           return (
@@ -342,8 +358,10 @@ export async function processTradeProStores(
   }
 
   const storesByNumber = new Map<string, Store>()
+  const storesByApiId = new Map<string, Store>()
   for (const s of existingStores) {
     if (s.number) storesByNumber.set(normalizeText(s.number), s)
+    if (s.api_identifier) storesByApiId.set(normalizeText(s.api_identifier), s)
   }
 
   const promoterByName = new Map<string, Promoter>()
@@ -357,6 +375,7 @@ export async function processTradeProStores(
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i]
     const rowNum = i + 2
+    const apiIdRaw = getColVal(r, 'apiIdentifier')
     const numberRaw = getColVal(r, 'storeNumber')
     const nameRaw = getColVal(r, 'storeName')
     const network = getColVal(r, 'network') || 'Geral'
@@ -366,52 +385,60 @@ export async function processTradeProStores(
     const promoterRaw = getColVal(r, 'promoterName')
     const promoterPhone = getColVal(r, 'promoterPhone')
 
-    if (!numberRaw && !nameRaw) {
+    if (!numberRaw && !nameRaw && !apiIdRaw) {
       ignoredCount++
-      errors.push({ row: rowNum, reason: 'Linha sem número ou nome de loja.' })
+      errors.push({
+        row: rowNum,
+        reason: 'Linha sem identificador oficial, número ou nome de loja.',
+      })
       continue
     }
 
-    const number = numberRaw || `TP-${i + 1}`
+    const number = numberRaw || apiIdRaw || `TP-${i + 1}`
     const name = nameRaw || `Loja ${number}`
     const normNum = normalizeText(number)
+    const normApiId = apiIdRaw ? normalizeText(apiIdRaw) : ''
 
     let storeRecord: Store | null = null
 
     try {
-      if (storesByNumber.has(normNum)) {
-        // Atualizar loja existente
+      // Prioridade 1: Match por Identificador Oficial da API TradePRO
+      if (normApiId && storesByApiId.has(normApiId)) {
+        const current = storesByApiId.get(normApiId)!
+        storeRecord = await updateStore(current.id, {
+          name,
+          number: number || current.number,
+          network: network || current.network,
+          address: address !== 'Não informado' ? address : current.address,
+          region: region || current.region,
+          api_identifier: apiIdRaw,
+        })
+        updatedCount++
+      } else if (storesByNumber.has(normNum)) {
+        // Prioridade 2: Match por Número Comercial
         const current = storesByNumber.get(normNum)!
         storeRecord = await updateStore(current.id, {
           name,
           network: network || current.network,
           address: address !== 'Não informado' ? address : current.address,
           region: region || current.region,
+          api_identifier: apiIdRaw || current.api_identifier,
         })
         updatedCount++
+        if (normApiId) storesByApiId.set(normApiId, storeRecord)
       } else {
-        // Fuzzy check por nome para evitar duplicação acidental
-        const fuzzyMatch = identifyStore([name], existingStores)
-        if (fuzzyMatch && fuzzyMatch.confidence >= 0.88) {
-          storeRecord = await updateStore(fuzzyMatch.store.id, {
-            name,
-            network: network || fuzzyMatch.store.network,
-            address: address !== 'Não informado' ? address : fuzzyMatch.store.address,
-          })
-          updatedCount++
-          storesByNumber.set(normNum, storeRecord)
-        } else {
-          // Criar nova loja
-          storeRecord = await createStore({
-            number,
-            name,
-            network,
-            address,
-            region,
-          })
-          createdCount++
-          storesByNumber.set(normNum, storeRecord)
-        }
+        // Criar nova loja
+        storeRecord = await createStore({
+          number,
+          name,
+          network,
+          address,
+          region,
+          api_identifier: apiIdRaw,
+        })
+        createdCount++
+        storesByNumber.set(normNum, storeRecord)
+        if (normApiId) storesByApiId.set(normApiId, storeRecord)
       }
 
       // Se houver promotor vinculado à linha
@@ -588,15 +615,26 @@ export async function processTradeProVisits(
       photoData.append('confidence', String(confidence))
       photoData.append('needs_review', 'false')
       photoData.append('review_status', 'approved')
+      // Marcação de vínculo inferido por loja + data
+      photoData.append('is_inferred', 'true')
+      photoData.append(
+        'inferred_notes',
+        `Vínculo inferido por metadados de importação (${item.storeRef}) na data ${auditDate}`,
+      )
       identifiedStoreIds.add(match.store.id)
       identifiedCount++
     } else {
       if (match?.store) {
         photoData.append('identified_store', match.store.id)
-        photoData.append('identified_store_name', `${match.store.name} (baixa confiança)`)
+        photoData.append('identified_store_name', `${match.store.name} (baixa confiança / ambíguo)`)
       }
       photoData.append('confidence', String(confidence))
       photoData.append('needs_review', 'true')
+      photoData.append('ambiguous_match', 'true')
+      photoData.append(
+        'inferred_notes',
+        `Identificação ambígua ou divergente para o termo "${item.storeRef}" — requer revisão humana`,
+      )
       photoData.append('review_status', 'pending')
       pendingCount++
     }

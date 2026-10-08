@@ -60,6 +60,7 @@ export const Lojas: React.FC = () => {
 
   // Form states
   const [number, setNumber] = useState('')
+  const [apiIdentifier, setApiIdentifier] = useState('')
   const [name, setName] = useState('')
   const [address, setAddress] = useState('')
   const [network, setNetwork] = useState('')
@@ -109,6 +110,7 @@ export const Lojas: React.FC = () => {
     if (st) {
       setEditingStore(st)
       setNumber(st.number)
+      setApiIdentifier(st.api_identifier || '')
       setName(st.name)
       setAddress(st.address)
       setNetwork(st.network)
@@ -116,6 +118,7 @@ export const Lojas: React.FC = () => {
     } else {
       setEditingStore(null)
       setNumber('')
+      setApiIdentifier('')
       setName('')
       setAddress('')
       setNetwork('')
@@ -137,7 +140,7 @@ export const Lojas: React.FC = () => {
 
     try {
       setSubmitting(true)
-      const payload = { number, name, address, network, region }
+      const payload: any = { number, name, address, network, region, api_identifier: apiIdentifier }
 
       if (editingStore) {
         await updateStore(editingStore.id, payload)
@@ -224,7 +227,8 @@ export const Lojas: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50 text-xs font-semibold text-slate-500 uppercase">
-                <th className="p-4">Identificador</th>
+                <th className="p-4">Número Comercial</th>
+                <th className="p-4">ID Oficial API (TradePRO)</th>
                 <th className="p-4">Nome da Loja</th>
                 <th className="p-4">Endereço Completo</th>
                 <th className="p-4">Rede / Bandeira</th>
@@ -250,6 +254,18 @@ export const Lojas: React.FC = () => {
                 stores.map((st) => (
                   <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-4 font-mono font-bold text-indigo-600">{st.number}</td>
+                    <td className="p-4 font-mono text-xs text-slate-600">
+                      {st.api_identifier ? (
+                        <Badge
+                          variant="outline"
+                          className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px]"
+                        >
+                          {st.api_identifier}
+                        </Badge>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
                     <td className="p-4 font-semibold text-slate-900">{st.name}</td>
                     <td className="p-4 text-slate-600 max-w-sm truncate">{st.address}</td>
                     <td className="p-4 font-medium text-slate-800">{st.network}</td>
@@ -328,14 +344,27 @@ export const Lojas: React.FC = () => {
 
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="st-num">Número Identificador * (Ex: 0001)</Label>
+              <Label htmlFor="st-num">Número Comercial * (Ex: 085)</Label>
               <Input
                 id="st-num"
                 value={number}
                 onChange={(e) => setNumber(e.target.value)}
-                placeholder="0001"
+                placeholder="085"
                 required
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="st-api-id">Identificador Oficial TradePRO (API)</Label>
+              <Input
+                id="st-api-id"
+                value={apiIdentifier}
+                onChange={(e) => setApiIdentifier(e.target.value)}
+                placeholder="Ex: TP-90518 ou ID oficial do sistema TradePRO"
+              />
+              <p className="text-[11px] text-slate-400">
+                Utilizado para conciliação automatizada segura com a API do TradePRO.
+              </p>
             </div>
 
             <div className="space-y-1.5">

@@ -16,6 +16,8 @@ import {
   Award,
   Scale,
   Plug,
+  Layers,
+  CalendarDays,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Logo } from '@/components/Logo'
@@ -71,6 +73,18 @@ export const MobileHeader: React.FC = () => {
       label: 'Regras de Auditoria',
       path: '/regras',
       icon: ClipboardList,
+      roles: ['administrator', 'analista_books', 'supervisor', 'gestor'],
+    },
+    {
+      label: 'Sortimento',
+      path: '/sortimento',
+      icon: Layers,
+      roles: ['administrator', 'analista_books', 'supervisor', 'gestor'],
+    },
+    {
+      label: 'Agenda de Visitas',
+      path: '/agenda',
+      icon: CalendarDays,
       roles: ['administrator', 'analista_books', 'supervisor', 'gestor'],
     },
     {

@@ -35,7 +35,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 
-type Step = 'upload' | 'mapping' | 'result'
+type Step = 'upload' | 'mapping' | 'importing' | 'result'
 
 const PRICE_FIELDS = [
   { key: 'sku', label: 'Produto (código ou nome)', required: true },

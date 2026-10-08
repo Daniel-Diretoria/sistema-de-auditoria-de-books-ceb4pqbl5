@@ -33,11 +33,15 @@ const COLORS = {
 
 const CATEGORY_COLOR: Record<SkuCategory, [number, number, number]> = {
   presente_pdv: COLORS.emerald,
-  ruptura_justificada: COLORS.amber,
-  ausente_cobrar: COLORS.red,
-  validar_ruptura_antiga: [249, 115, 22],
+  nao_identificado: [14, 165, 233],
+  evidencia_insuficiente: COLORS.amber,
   sem_foto_secao: COLORS.slate,
   sem_foto_loja: [63, 63, 70],
+  nao_verificado: [148, 163, 184],
+  falha_tecnica: [168, 85, 247],
+  ruptura_justificada: COLORS.amber,
+  validar_ruptura_antiga: [249, 115, 22],
+  ausente_cobrar: COLORS.red,
 }
 
 function priceLabel(c: SkuClassification): string {
