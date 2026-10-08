@@ -964,7 +964,7 @@ const PriceAlerts: React.FC<{ c: SkuClassification; compact?: boolean }> = ({ c 
   }
   return (
     <div className="flex flex-col gap-0.5">
-      {c.price_match === false && (
+      {c.price_checked && c.price_match === false && (
         <Badge
           variant="outline"
           className="text-[9px] bg-red-100 text-red-800 border-red-200 w-fit"
