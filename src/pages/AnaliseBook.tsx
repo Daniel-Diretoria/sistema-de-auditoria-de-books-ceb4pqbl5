@@ -11,7 +11,7 @@ import {
   getFileUrl,
   formatDate,
 } from '@/services/api'
-import { runBookAnalysis, AnalysisProgress } from '@/lib/skuAnalysis'
+import { runBookAnalysis, AnalysisProgress, priceMatchesExpected } from '@/lib/skuAnalysis'
 import {
   Book,
   Brand,
@@ -888,7 +888,17 @@ const ReviewDrawerContent: React.FC<{
                 <Label className="text-[11px] text-slate-500">Preço observado</Label>
                 <Input
                   value={priceObserved}
-                  onChange={(e) => setPriceObserved(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setPriceObserved(val)
+                    // Regra: etiqueta conforme se bate com preço normal OU promo (tolerância 1 centavo).
+                    if (reviewItem && val.trim()) {
+                      const sku = skuMap.get(reviewItem.sku)
+                      if (sku) setPriceMatch(priceMatchesExpected(sku, val))
+                    } else {
+                      setPriceMatch(null)
+                    }
+                  }}
                   placeholder="R$ 0,00"
                   className="bg-white h-9 text-sm"
                 />

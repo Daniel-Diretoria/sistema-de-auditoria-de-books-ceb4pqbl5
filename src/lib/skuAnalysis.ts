@@ -365,13 +365,44 @@ function isInPromotion(sku: SKU, auditDate?: string): boolean {
   return true
 }
 
-function expectedPriceForSku(sku: SKU, auditDate?: string): string {
-  const promo = isInPromotion(sku, auditDate) ? sku.promo_price : 0
-  const price = promo > 0 ? promo : sku.normal_price
+// Diferença de até 1 centavo é arredondamento da loja (ex.: etiqueta 7,99 vs 7,98).
+const PRICE_TOLERANCE = 0.01
+
+function formatBRL(v: number): string {
   return (
     'R$ ' +
-    Number(price || 0)
+    Number(v || 0)
       .toFixed(2)
       .replace('.', ',')
   )
+}
+
+/**
+ * Preço esperado exibido na análise. Regra (07/10, Gabriel): a etiqueta é
+ * CONFORME se bate com o preço normal OU com o promo (Von Card etc.) —
+ * então mostramos os dois quando existe promo cadastrada.
+ */
+function expectedPriceForSku(sku: SKU, _auditDate?: string): string {
+  const normal = Number(sku.normal_price || 0)
+  const promo = Number(sku.promo_price || 0)
+  if (promo > 0) {
+    return `${formatBRL(normal)} (ou promo ${formatBRL(promo)})`
+  }
+  return formatBRL(normal)
+}
+
+/**
+ * Verifica se o preço lido na etiqueta bate com o normal OU com o promo.
+ * Retorna null quando o valor lido não pôde ser interpretado.
+ */
+export function priceMatchesExpected(sku: SKU, observed: string): boolean | null {
+  const m = String(observed || '').match(/(\d{1,3}(?:\.\d{3})*,\d{2})/)
+  if (!m) return null
+  const value = Number(m[1].replace(/\./g, '').replace(',', '.'))
+  if (!Number.isFinite(value) || value <= 0) return null
+  const normal = Number(sku.normal_price || 0)
+  const promo = Number(sku.promo_price || 0)
+  const okNormal = normal > 0 && Math.abs(value - normal) <= PRICE_TOLERANCE
+  const okPromo = promo > 0 && Math.abs(value - promo) <= PRICE_TOLERANCE
+  return okNormal || okPromo
 }
