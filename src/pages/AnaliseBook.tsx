@@ -85,11 +85,15 @@ const CATEGORIES: SkuCategory[] = [
 
 const CATEGORY_ICONS: Record<SkuCategory, React.ReactNode> = {
   presente_pdv: <CheckCircle2 className="h-5 w-5" />,
-  ruptura_justificada: <AlertTriangle className="h-5 w-5" />,
-  ausente_cobrar: <XCircle className="h-5 w-5" />,
-  validar_ruptura_antiga: <AlertTriangle className="h-5 w-5" />,
+  nao_identificado: <ScanSearch className="h-5 w-5" />,
+  evidencia_insuficiente: <AlertTriangle className="h-5 w-5" />,
   sem_foto_secao: <ImageOff className="h-5 w-5" />,
   sem_foto_loja: <StoreIcon className="h-5 w-5" />,
+  nao_verificado: <Package className="h-5 w-5" />,
+  falha_tecnica: <AlertTriangle className="h-5 w-5" />,
+  ruptura_justificada: <AlertTriangle className="h-5 w-5" />,
+  validar_ruptura_antiga: <AlertTriangle className="h-5 w-5" />,
+  ausente_cobrar: <XCircle className="h-5 w-5" />,
 }
 
 type View = 'loading' | 'progress' | 'ready'
@@ -192,11 +196,15 @@ export const AnaliseBook: React.FC = () => {
   const summary = useMemo(() => {
     const s: Record<SkuCategory, number> = {
       presente_pdv: 0,
-      ruptura_justificada: 0,
-      ausente_cobrar: 0,
-      validar_ruptura_antiga: 0,
+      nao_identificado: 0,
+      evidencia_insuficiente: 0,
       sem_foto_secao: 0,
       sem_foto_loja: 0,
+      nao_verificado: 0,
+      falha_tecnica: 0,
+      ruptura_justificada: 0,
+      validar_ruptura_antiga: 0,
+      ausente_cobrar: 0,
     }
     for (const c of classifications) s[c.category]++
     return s
@@ -474,11 +482,15 @@ export const AnaliseBook: React.FC = () => {
               groupedByStore.map((g) => {
                 const storeCounts: Record<SkuCategory, number> = {
                   presente_pdv: 0,
-                  ruptura_justificada: 0,
-                  ausente_cobrar: 0,
-                  validar_ruptura_antiga: 0,
+                  nao_identificado: 0,
+                  evidencia_insuficiente: 0,
                   sem_foto_secao: 0,
                   sem_foto_loja: 0,
+                  nao_verificado: 0,
+                  falha_tecnica: 0,
+                  ruptura_justificada: 0,
+                  validar_ruptura_antiga: 0,
+                  ausente_cobrar: 0,
                 }
                 for (const it of g.items) storeCounts[it.category]++
                 return (
@@ -968,9 +980,9 @@ const ReviewDrawerContent: React.FC<{
                     const val = e.target.value
                     setPriceObserved(val)
                     // Regra: etiqueta conforme se bate com preço normal OU promo (tolerância 1 centavo).
-                    if (reviewItem && val.trim()) {
-                      const sku = skuMap.get(reviewItem.sku)
-                      if (sku) setPriceMatch(priceMatchesExpected(sku, val))
+                    if (item && val.trim()) {
+                      const skuItem = sku || (sku?.id === item.sku ? sku : undefined)
+                      if (skuItem) setPriceMatch(priceMatchesExpected(skuItem, val))
                     } else {
                       setPriceMatch(null)
                     }

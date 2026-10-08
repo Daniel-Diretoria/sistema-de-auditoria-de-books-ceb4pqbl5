@@ -478,6 +478,10 @@ export interface PriceTable {
   id: string
   brand: string
   sku: string
+  rede: string
+  secao?: string
+  preco: number
+  vigencia?: string
   store?: string
   network?: string
   normal_price?: number
