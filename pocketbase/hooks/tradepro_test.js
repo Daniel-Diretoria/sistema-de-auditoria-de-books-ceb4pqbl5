@@ -178,7 +178,10 @@ routerAdd(
       hint = 'Erro: ' + lastErr
     }
 
-    $app.logger().warn('tradepro test failed', 'status', lastStatus, 'tried', tried.join(' | '))
+    // Sanitiza logs para não expor variantes com esquemas que possam embutir credenciais
+    $app
+      .logger()
+      .warn('tradepro test failed', 'status', lastStatus, 'candidates_count', candidates.length)
     return e.json(200, {
       ok: false,
       status: lastStatus,

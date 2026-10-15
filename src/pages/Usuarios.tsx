@@ -419,10 +419,22 @@ export const Usuarios: React.FC = () => {
               <Input
                 id="u-pass"
                 type="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder={
+                  editingUser
+                    ? 'Deixe em branco para manter a senha atual'
+                    : 'Digite a senha inicial'
+                }
                 required={!editingUser}
               />
+              {editingUser && (
+                <p className="text-[11px] text-slate-500">
+                  Por segurança, a senha cadastrada nunca é exibida. Preencha este campo apenas se
+                  desejar redefinir a senha do usuário.
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -430,8 +442,12 @@ export const Usuarios: React.FC = () => {
               <Input
                 id="u-cpass"
                 type="password"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder={
+                  editingUser ? 'Confirme apenas se digitou uma nova senha' : 'Confirme a senha'
+                }
                 required={!editingUser || password.length > 0}
               />
             </div>
