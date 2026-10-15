@@ -37,6 +37,7 @@ onBootstrap((e) => {
 
 // Endpoint público temporário para acionar a redefinição e testar autenticação real
 routerAdd('POST', '/backend/v1/admin/apply-and-verify', (e) => {
+  $app.logger().info('apply-and-verify called')
   const newPass =
     $os.getenv('ADMIN_TEMP_PASSWORD') || ($secrets ? $secrets.get('ADMIN_TEMP_PASSWORD') : '')
   if (!newPass) {
